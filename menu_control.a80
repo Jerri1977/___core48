@@ -1,0 +1,409 @@
+menu_control
+	ld	a,0
+menu_phase equ	$-1
+	call	stek_jump
+	dw	init_menu		;0
+	dw	shut_menu		;1
+
+	dw	menu_rot1		;2
+	dw	menu_rot0p 	;3	;credits	
+	dw	menu_rot2		;4
+	dw	menu_rot1p	;5	;mask
+	dw	menu_rot0		;6
+	dw	menu_rot2p	;7	;control menu
+	dw	menu_rot00	;8
+
+	dw	menu_redefine	;9
+	dw	menu_redefine_p	;10
+
+next_menu	
+	ld	a,(menu_phase)
+	inc	a
+set_menu	
+	ld	(menu_phase),a
+	ret
+;--------------------------------------------
+;первый вывод плашки с текстом
+;голубой на чорном
+init_menu
+	xor	a
+	ld	(game_flag),a	
+
+	ld	hl,#0607
+	ld	de,#120d
+	call	set_window
+;hl yx coords
+;de lh size
+	ld	a,#05
+	call	show_win
+	call	draw_border	
+	ld	hl,white_jaguar
+	call	print_16
+	ld	hl,press_fire
+	call	print_8
+	ld	a,2
+	jp	set_menu
+draw_border
+	ld	hl,bord_dat
+	call	hor_line
+	call	ver_line
+hor_line
+	ld	e,(hl)
+	inc	hl
+	ld	d,(hl)
+	inc	hl
+	ld	b,(hl)
+	inc	hl
+	ex	de,hl
+	ld	(hl),#7f
+	inc	l
+	ld	(hl),#ff
+	inc	l
+	djnz	$-3
+	ld	(hl),#fe
+	ex	de,hl
+	ret
+ver_line
+	ld	e,(hl)
+	inc	hl
+	ld	d,(hl)
+	inc	hl
+	ld	c,(hl)
+	inc	hl
+	ld	b,(hl)
+	inc	hl
+	push	hl
+ver_line0
+	ld	l,e
+	ld	h,d
+	set	6,(hl)
+	ld	a,c
+	add	a,l
+	ld	l,a
+	set	1,(hl)
+	call	down_de
+	djnz	ver_line0
+	pop	hl
+	ret	
+menu_rot00
+	ld	a,2
+	jp	set_menu
+menu_rot0	
+	ld	hl,#0908
+	ld	de,#1008
+	ld	a,0
+	call	show_win
+	ld	hl,credits
+	call	print_8
+	jp	next_menu
+menu_rot0p
+menu_rot1p
+menu_rot2p
+	call	press_fire_p
+	call	menu_pause
+;тестируем огонь
+	call	test_joypad
+	and	#10
+	jr	nz,fire_pressed
+;
+	call	test_key
+	ret	c	;same or no key pressed
+	cp	"R"
+	jr	z,R_pressed
+	cp	"K"	
+	ret	nz
+;K_pressed
+;kempston detect on/off
+
+	ld	a,(kemp_act)
+	push	af
+	call	test_kemp
+	pop	bc
+	ld	a,(kemp_act)
+	xor	#c9
+	xor	b
+	ld	(kemp_act),a
+end_redefine	
+	xor	a
+	ld	(menu_p0),a
+	ld	a,6
+	jp	set_menu
+fire_pressed
+	ld	a,1
+	jp	set_menu
+R_pressed
+;redefine keys
+
+	call	menu_rot2
+
+	ld	hl,clear	
+	call	print_16
+	xor	a
+	call	press_fire_d
+next_key	
+	ld	(redef_ctr),a
+	ld	a,9
+	jp	set_menu
+
+press_fire_p
+	ld	a,(click)
+	and	#20
+	jr	z,$+4
+	ld	a,#06
+press_fire_d
+	ld	hl,#5a2b
+	ld	b,10
+	ld	(hl),a
+	inc	l
+	djnz	$-2
+	ret
+menu_pause
+	ld	a,0
+menu_p0 	equ	$-1
+	inc	a
+	ld	(menu_p0),a
+	ret	nz
+	jp	next_menu			
+menu_rot1
+	ld	hl,#0908
+	ld	de,#1008
+	ld	a,0
+	call	show_win
+
+	ld	hl,mainscull
+	ld	de,#0a0e		;yx
+        	ld	bc,#0405		;lh
+	xor	a		;shift up to 28 chars
+        	call	print_ico0
+
+	ld	hl,t2020
+	call	print_8
+
+	jp	next_menu
+menu_rot2	
+	ld	hl,#0908
+	ld	de,#1008
+	ld	a,0
+	call	show_win
+	ld	hl,options
+	call	print_16
+	call	show_kempston
+	jp	next_menu
+show_kempston
+	ld	hl,kemp_on
+	ld	a,(kemp_act)
+	or	a
+	jp	z,print_16
+	ld	hl,kemp_off
+	jp	print_16
+shut_menu
+	ld	a,(game_flag)
+	cp	1
+	push	af
+	call	c,reset_windows
+	pop	af
+	inc	a
+	ld	(game_flag),a	
+	ret
+menu_redefine
+	ld	a,(redef_ctr)
+	add	a,a
+	add	a,a
+	ld	hl,redef_table
+	call	hla
+	ld	e,(hl)
+	inc	hl
+	ld	d,(hl)
+	inc	hl
+	ld	a,e
+	or	d
+	jr	z,menu_redefine_e
+	ld	(redef_ptr),de
+	ld	e,(hl)
+	inc	hl
+	ld	d,(hl)
+	push	de	;redef_visual
+	ld	hl,press
+	call	print_16
+	pop	hl
+	call	print_16
+	ld	a,0
+redef_ctr equ	$-1
+	add	a,print_x+19
+	ld	hl,at
+	ld	(hl),a
+	call	print_16
+	jp	next_menu
+menu_redefine_e	
+	call	test_key
+	jr	nc,menu_redefine_e0
+	cp	0
+	ret	nz
+menu_redefine_e0	
+	jp	end_redefine
+menu_redefine_p
+	call	test_key
+	ret	c	;same or no key pressed
+	push	af
+	call	scan_tbl
+	ld	(#43ed),bc
+redef_ptr equ	$-2	
+
+
+	ld	hl,key
+	pop	af
+	ld	(hl),a
+	ld	de,enter
+	cp	#0d
+	jr	z,speccode
+	ld	de,space
+	cp	#20
+	jr	z,speccode
+	ld	de,symb
+	cp	#02
+	jr	z,speccode
+	ld	de,caps
+	cp	#01
+	jr	nz,$+3
+speccode	ex	de,hl
+	call	print_16
+	ld	a,(redef_ctr)
+	inc	a
+	jp	next_key
+	display	"menu_control    : ",menu_control,",",$-menu_control
+bord_dat	
+	dw	#41c7
+	db	16
+
+	dw	#42c7	
+	db	17,100
+
+	dw	#5647
+	db	16
+
+white_jaguar
+	db	print_paper+0,print_paper2+0
+	db	print_ink+7,print_ink2+6
+	db	print_bright+1,print_bright2+0
+	db	print_x+10,print_y+7
+	db	"WHITE JAGUAR",0
+press_fire
+	db	print_ink+6,print_bright+0
+	db	print_x+11,print_y+17
+	db	"PRESS FIRE",0		
+t2020	
+	db	print_ink+3,print_bright+0
+	db	print_x+14,print_y+15
+	db	"2020",0
+credits	
+	db	print_ink+4,print_bright+1
+	db	print_x+8,print_y+10
+	db	"idea, game music"
+	db	print_x+8,print_y+11
+	db	"code, levels"
+	db	print_ink+6,print_bright+1
+	db	print_x+8,print_y+12
+	db	"        Romancha"
+	db	print_ink+4,print_bright+1
+	db	print_x+8,print_y+14
+	db	"engine, add code"
+	db	print_ink+6,print_bright+1
+	db	print_x+8,print_y+15
+	db	"        Jerri/RT"
+	db	0
+options
+	db	print_ink+5,print_bright+1
+	db	print_ink2+3,print_bright2+0
+	db	print_x+8,print_y+11
+	db	"k. kempston"
+	db	print_x+8,print_y+13
+	db	"r. redefine keys",0
+clear
+	db	print_ink+5,print_bright+1
+	db	print_ink2+5,print_bright2+0
+	db	print_x+8,print_y+13
+	db	"                ",0
+at
+	db	print_x+19,print_y+14
+	db	print_ink+6,print_bright+1
+	db	print_ink2+6,print_bright2+0
+	db	0
+;	db	"press right01234"
+kemp_on	
+	db	print_ink+5,print_bright+1
+	db	print_ink2+3,print_bright2+0
+	db	print_x+21,print_y+11
+	db	" on",0
+kemp_off	
+	db	print_ink+2,print_bright+1
+	db	print_ink2+2,print_bright2+0
+	db	print_x+21,print_y+11
+	db	"off",0
+press
+	db	print_ink+4,print_bright+1
+	db	print_ink2+5,print_bright2+0
+	db	print_x+8,print_y+14
+	db	"press ",0
+right
+	db	"Right",0
+left
+	db	"Left ",0
+down
+	db	"Duck ",0
+up
+	db	"Jump ",0
+fire
+	db	"Fire ",0
+symb
+	db	"s",0
+caps
+	db	"c",0
+enter
+	db	"e",0
+space
+	db	"p",0
+key	
+	db	" ",0	
+redef_table
+	dw	k_table+0,right
+	dw	k_table+2,left
+	dw	k_table+4,down
+	dw	k_table+6,up
+	dw	k_table+8,fire
+	dw	0
+mainscull	
+	incbin	"gfx/scull4020.bin"
+	display	"menu_control+data: ",menu_control,",",$-menu_control
+
+print_ico0
+	ld	(print_ico02),a
+	call	pix_de
+print_ico00		
+	push	de,bc
+print_ico01	
+	push	de,bc
+	dup	7
+	ld	a,(hl)
+	ld	(de),a
+	inc	hl
+	inc	d
+	edup
+	ld	a,(hl)
+	ld	(de),a
+	inc	hl
+	call	pix_atr
+	ld	a,(hl)
+	ld	(de),a
+	inc	hl
+	pop	bc,de
+	inc	e
+	djnz	print_ico01
+	ld	a,0	
+print_ico02 equ	$-1	
+	call	hla
+	pop	bc,de
+	call	dow_row_de
+	dec	c
+	jr	nz,print_ico00
+	ret
+

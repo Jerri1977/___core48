@@ -1,0 +1,123 @@
+;;CORE Engine 48k edit
+;используется память #5b00-#ffff
+;расположение основных блоков памяти
+;2 блока тайлов 8*8*256
+;расположение блоков кратно 2048
+ 
+;блок 1 основной для бэкграунда
+;блок 2 генерируемый блок для вывода спрайтов на экран. не более 254
+;создаваемых блоков
+
+;на машинах с раздельным полем памяти рекомендуется расположение всех 
+;частоиспользуемых данных #8000+ 
+	org	#5b00
+	defs	flip_tbl-$,#00
+;заполняем память 0
+
+	org	start_engine
+	ds	#101,im_vector+1
+;------------------------------
+beginning
+	di
+	ld	a,im_vector
+	ld	i,a
+	im	2
+	ld	sp,game_stek	
+	ei
+	jp	game_start
+;------------------------------
+	display	"im stek free: ",start_inter-$
+	
+	org	start_inter
+im_stek
+;interrupt 
+	ex	(sp),hl
+	ld	(im_ret0),hl
+	pop	hl
+	ld	(im_sp0),sp
+	push	bc
+	ld	sp,im_stek
+;
+	push	ix,iy
+	push	hl,de,bc,af
+	exx
+	ex	af,af'
+	push	hl,de,bc,af
+	ld	hl,im_ret	
+	push	hl	
+	ld	a,0
+int_mode	equ	$-1
+	ld	hl,interrupt_list
+	jp	hlhl_jump
+stek_jump
+	pop	hl
+hlhl_jump
+	add	a,a
+	call	hla
+	ld	a,(hl)
+	inc	hl	
+	ld	h,(hl)
+	ld	l,a
+	jp	(hl)
+im_ret
+	pop	af,bc,de,hl
+	exx
+	ex	af,af'
+	pop	af,bc,de,hl
+	pop	iy,ix
+	ei
+	ld	sp,#3131
+im_sp0	equ	$-2
+	jp	#c3c3
+im_ret0	equ	$-2		
+;------------------------------
+hla
+	add	a,l
+	ld	l,a
+	ret	nc
+	inc	h
+int_empty
+	ret
+;---------------------------------
+init_roll
+	ld	d,roll_table/256
+	ld	l,0
+init_roll1
+	ld	h,d
+	ld	bc,#700
+	ld	a,l
+init_roll0
+	srl	a
+	rr	c		
+	ld	(hl),a
+	inc	h
+	ld	(hl),c
+	inc	h
+	djnz	init_roll0
+	inc	l
+	jp	nz,init_roll1	
+	ret
+init_flip
+	ld	hl,flip_tbl
+init_flip0
+	ld	b,8
+	ld	c,l
+init_flip1
+	rr	c
+	rla			
+	djnz	init_flip1
+	ld	(hl),a
+	inc	l
+	jr	nz,init_flip0
+	ret	
+;------------------------------
+;core engine placing here
+;
+	include	"core\core_keys.a80"
+	include	"core\core_tiles.a80"
+	include	"core\core_sprite3.a80"
+	include	"core\core_sprite2.a80"
+	include	"core\core_sprite1.a80"
+	include	"core\core_tilesprite.a80"
+	include	"core\core_print.a80"
+	display	"engine free for game stek: ",$,",",flip_spr-$

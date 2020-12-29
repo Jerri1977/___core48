@@ -1,0 +1,208 @@
+;scan_kbd -вешаетс€ на прерывани€ сканирование клавиатуры
+;	-остальные подпрограммы работают с массивом созданым этой подпрограммой
+;HL,BC,AF
+
+;scan_ctrl -провер€ет нажатые клавиши согласно таблице k_table до 8 штук
+;HL,DE,BC,AF,HL',DE',BC'
+;A         -результат
+
+;test_joypad - проверка управлени€ scan_ctrl 
+;HL,DE,BC,AF,HL',DE',BC'
+;	   - в €чейке key_presed только что нажатых кнопок
+;	   - в €чейке key_holded удерживаемых кнопок
+
+;scan_tbl -используетс€ при задании таблицы сканкодов дл€ k_table
+;HL,BC,AF
+;BC       -результат B-р€д 0-7 —-маска #10-#01
+
+;key_char     -сканирование нажатой клавиши 
+;HL,DE,BC,AF
+;A,key_presed -результат
+
+;test_key -проверка нажати€ любой новой клавиши через key_char
+;HL,DE,BC,AF
+;A        -клавиша
+;Carry    -нажата нова€ клавиша 
+;NotCarry -удерживаемых стара€ клавиша или ничего не нажато 
+
+;test_kemp  -тестирование подключенного kempston joystikа с 1ой кнопкой 
+;HL,DE,BC,AF
+;A,kemp_act -#00 джойстик присутсвует
+;	  -#c9 джойстик не найден
+
+;по схеме
+;	store_kemp_act
+;	call test_kemp
+;	xor #c9
+;	xor store_kemp_act
+;	ld (kemp_act),a
+;можно включать/выключать обработку джойстика
+
+;------------------------------------
+scan_kbd
+	ld 	a,-2
+	ld 	c,a
+	ld 	hl,kb_buf
+	dup 	7
+	ld 	b,a
+	ini
+	rlca
+	edup
+	ld 	b,a
+	ini
+	ret
+;------------------------------------
+scan_ctrl
+	ld 	bc,k_table
+	ld 	de,kb_buf
+	exx
+	ld	e,#80
+scan_ctrl0
+	exx
+	ld	a,(bc)
+	inc	bc
+	ld	l,a
+	ld	h,0
+	add	hl,de
+	ld	a,(bc)
+	inc	bc
+	and	(hl)
+	cp	1
+	exx
+	rr	e
+	jr	nc,scan_ctrl0
+	ld	a,e
+kemp_act	ret
+	in	a,(#1f)
+	and	#1f
+	or	e
+	ret
+;------------------------------------
+test_joypad
+	call	scan_ctrl
+	ld	c,a
+	ld	a,(key_holded)
+	xor	c
+	and	c
+	ld	(key_presed),a
+	ld	a,c
+	ld	(key_holded),a
+	ret
+;------------------------------------
+scan_tbl
+	ld	hl,kb_buf
+	ld	b,8
+scan_tbl0
+	ld	c,#10		
+scan_tbl1
+	ld	a,(hl)
+	and	c
+	cp	1
+	jr	c,scan_tbl2
+	rrc	c
+	jr	nc,scan_tbl1
+	inc	hl
+	djnz	scan_tbl0
+	ld	c,b
+	ret
+scan_tbl2
+	ld	a,8
+	sub	b
+	ld	b,c
+	ld	c,a
+;pos,mask	;c b	
+	ret
+;------------------------------------
+key_char
+	ld	de,keys_table
+	ld	hl,kb_buf
+	ld	c,8
+key_char0	
+	ld	a,(hl)
+	inc	hl
+	ld	b,5
+key_char1
+	rra
+	jr	nc,key_char2
+	inc	de
+	djnz	key_char1				
+	dec	c
+	jr	nz,key_char0
+key_char2	
+	ld	a,(de)
+	ld	(key_presed),a
+	ret
+;------------------------------------
+test_key
+	call	key_char
+	ld	c,0
+old_key	equ	$-1
+	ld	(old_key),a	
+	cp	c
+	scf
+	ret	z
+	cp	1
+	ret
+;------------------------------------
+test_kemp
+	ld	bc,#001f
+	ld	l,b
+	ld	e,b
+i_00
+	in	a,(c)
+	or	e
+	ld	e,a
+	dec	l
+	jr	nz,i_00
+
+	ld	a,e
+	and	c
+	jr	z,kemp_present
+	ld	a,#c9
+kemp_present
+	ld	(kemp_act),a
+	ret	
+;------------------------------------
+k_table	
+; p o a q Sp En H R	
+; 0 1 2 3 4 
+; r l d u f 
+
+	db	5, 1	;right p   5, 1	
+	db	5, 2	;left  o   5, 2
+	db	1, 1	;down  a   1, 1
+	db	2, 1	;up    q   3, 1
+
+	db	7, 1	;fire  spc 7, 1
+	db	6, 1	;key6  en  6, 1
+
+	db	2, 8	;key7  R   2, 8
+	db	5, 16	;key8  Y   5, 16
+
+key_presed db 	0
+key_holded db	0
+
+kemp_var	db	0	
+cur_keys	db	0
+kb_buf	ds	8	
+	
+;	  1 2 4 8 16	
+;#fe 0	 cs z x c v
+;#fd 1 	  a s d f g
+;#fb 2	  q w e r t
+;#f7 3	  1 2 3 4 5
+;#ef 4	  0 9 8 7 6
+;#df 5	  p o i u y
+;#bf 6 	 en l k j h
+;#7f 7	sp ss m n b
+keys_table
+	db	#01,"ZXCV"
+	db	"ASDFG"
+	db	"QWERT"
+	db	"12345"
+	db	"09876"	
+	db	"POIUY"
+	db	#0d,"LKJH"
+	db	#20,#02,"MNB",#00
+;caps 01
+;symb 02	

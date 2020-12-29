@@ -1,0 +1,39 @@
+	ifnused max_bg
+max_bg  	equ     	#80	;максимальное количество тайлов заднего плана из 256 
+	endif
+mont_a	equ	#5b00	;цветова€ составл€юща€ набора генерируемых тайлов
+;#0400
+font_char equ	#5c00	;шрифт 96 символов дл€ печати процедурой print_8 print_16
+font_a	equ	#5f00	;цветова€ составл€юща€ основного набора тайлов
+font_t	equ	#6000	;основной набор тайлов 
+free_a	equ	#6800	;данные и код игры
+
+
+
+
+
+		
+
+start_engine equ	#e600	;код и данные движка
+im_vector	equ	(start_engine/256)
+start_inter equ	(im_vector+1)*257
+
+bgr_tile	equ	start_engine-#600	;#0600	;таблица тайлов совмещена с таблицей изменений
+bgr_data	equ	start_engine-#500		;таблица изменений 				
+flip_tbl	equ	bgr_tile-#100	;#0100	;таблица разворота спрайтов
+roll_table equ	flip_tbl-#e00	;#0e00	;таблица ролла
+
+mont_t	equ	#f800		;набор генерируемых тайлов
+flip_spr	equ	mont_t-144	;буфер дл€ разворота спрайта3
+
+
+game_stek	equ	flip_spr
+
+	display	"----------------------------------"
+	display	"engine tables: ",roll_table,",",start_engine-roll_table
+	display	"engine code: ",start_engine,",",flip_spr-start_engine
+	display	"engine data: ",flip_spr,",",0-flip_spr
+	display	" "
+	display	"used for data: ",font_char,",",free_a-font_char
+	display	"free for game: ",roll_table-free_a
+	display	"----------------------------------"

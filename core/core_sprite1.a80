@@ -1,0 +1,195 @@
+
+
+;рисуем спрайт в тайлбуфере 
+;используя таблицу скролла
+;hl sprite source
+
+;masked
+;формат спрайта = байт маски + байт спрайта
+
+
+
+sprite_draw1
+;клиппирование не требуется
+;hl адрес спрайта
+;de X,Y
+;b  H
+
+	ld	(sprite_sp0),sp
+	bit	3,c
+	call	nz,flip_sprite1
+	call	set_flags1		
+	push	hl
+	ld	c,#01
+	call	tile_mark
+	pop	hl
+	ret	nc	;sprite is out of screen
+
+;d X shift 
+;e tile_buff high  
+;ix tile_buff addr+#80	
+
+	ld	a,b	;высота спрайта
+	ex	af,af'
+	ld	a,d
+	and	#07
+	jp	z,sprite_noroll
+
+	add	a,a
+	add	a,(roll_table/256)-2
+	ld	d,a
+;recount_rolls
+	ld	a,#80
+	ld	(r1s10),a
+	ld	(r1s11),a
+	add	a,e
+	ld	(r1s22),a
+	ld	(r1s23),a
+;--------------------------------		
+;left col
+	ld	c,(hl)
+	inc	hl
+	ld	b,(hl)
+	inc	hl
+	ld	sp,hl
+	ld	h,d	;roll_table
+
+	ex	af,af'
+	ld	e,a
+
+;----------------------------------
+sprite_loops
+	ld	l,c
+	ld	a,(hl)
+	or	(ix+0)
+r1s10	equ	$-1
+
+	ld	l,b
+	xor	(hl)
+b11s10	equ	$-1
+	ld	(ix+0),a	
+r1s11	equ	$-1
+
+	inc	h
+	ld	d,(hl)
+	ld	l,c
+	ld	a,(hl)
+	dec	h
+
+	or	(ix+0)
+r1s22	equ	$-1
+
+	xor	d
+b11s13	equ	$-1
+	ld	(ix+0),a
+r1s23	equ	$-1
+	inc	ix	;go down
+
+	dec	e
+	jp	z,end_sprite
+
+	pop	bc
+	jp	sprite_loops
+
+
+set_flags1
+	push	af
+;c=flags	b3 - flipped
+;	b4 - blink	
+
+;	b7 - colorize sprites
+;	b 6___210 colormask
+
+	ld	a,c
+	and	#47
+	call	force_color
+
+	bit	4,c
+	jp	z,no_blink1
+;высветление отображение спрайта
+	ld	a,#b6 	;or (hl)
+	ld	(b11s10),a
+	ld	a,#b2 	;or d
+	ld	(b11s13),a
+
+	ld	a,#b0 	;or b
+	ld	(b11s14),a
+	pop	af
+	ret	
+no_blink1
+;нормальное отображение спрайта
+	ld	a,#ae 	;xor (hl)
+	ld	(b11s10),a
+	ld	a,#aa 	;xor d
+	ld	(b11s13),a
+
+	ld	a,#a8 	;xor b
+	ld	(b11s14),a
+	pop	af
+	ret
+
+sprite_noroll
+;--------------------------------		
+;left col
+;recount_rolln
+;	ld	a,#80
+;	ld	(r0s20),a
+;	ld	(r0s21),a
+
+	ld	c,(hl)
+	inc	hl
+	ld	b,(hl)
+	inc	hl
+	ld	sp,hl
+
+	ex	af,af'
+	ld	e,a
+sprite_loopn
+r0s2	
+	ld	a,c
+	or	(ix-#80)
+;r0s20	equ	$-1
+	xor	b
+b11s14	equ	$-1
+	ld	(ix-#80),a	
+;r0s21	equ	$-1
+
+	inc	ix	;go down
+
+	dec	e
+	jp	z,end_sprite
+
+	pop	bc
+	jp	sprite_loopn
+
+	ifnused	end_sprite
+end_sprite
+	ld	sp,$
+sprite_sp0 equ	$-2
+	ret
+	endif
+flip_sprite1
+	push	bc,de
+	ld	(flip_sp1sp0),sp		
+	ld	c,(hl)
+	inc	hl
+	ld	b,(hl)
+	inc	hl
+	ld	sp,hl
+	ld	h,flip_tbl/256
+count=flip_spr
+	dup	64
+	ld	l,c
+	ld	e,(hl)
+	ld	l,b
+	ld	d,(hl)
+	ld	(count+0),de
+	pop	bc
+count=count+2
+edup
+	org	$-1
+	ld	sp,$
+flip_sp1sp0 equ	$-2
+	pop	de,bc
+	ld	hl,flip_spr
+	ret		

@@ -1,0 +1,471 @@
+;---------------------------------
+place_tile
+;de Y 0-23, X 0-31 
+;c  -tile num
+
+	call	adr_bgr_data
+	ld	(hl),1	;команда освежить фон
+	dec	h
+	ld	(hl),c	
+	ret
+;---------------------------------
+get_tile
+;de Y 0-23, X 0-31 
+;a  -tile num
+	call	adr_bgr_data
+	dec	h
+	ld	a,(hl)
+	ret
+;---------------------------------
+adr_bgr_data
+	ld	a,e	;x
+	and	#1f
+	ld	l,a
+
+	ld	a,d	;y
+	rrca
+	rrca
+	rrca
+	and	#e0
+	or	l
+	ld	l,a
+	ld	a,d	;y
+	rrca
+	rrca
+	and	#06
+	add	a,bgr_data/256
+	ld	h,a
+	ret
+;---------------------------------
+tile_mark
+;de HX,Y
+;a  LX	;b765 Xroll bits
+;bc H,L
+	push	bc	
+
+	rlca
+	rlca
+	rlca
+	push	af
+	
+	and	#07
+	jr	z,$+3
+	inc	c
+;
+	ld	a,e
+	and	#07
+	add	a,b
+	add	a,7
+	srl	a
+	srl	a
+	srl	a
+	ld	b,a
+
+;b high c len
+	push	bc
+
+;counting drawing addr to IX
+	ld	a,e
+	exx
+	and	#07
+	or	#80
+	ld	c,a
+	ld	b,0
+	ld	hl,(curr_tile)
+	ld	h,mont_t/2048
+	add	hl,hl
+	add	hl,hl
+	add	hl,hl
+	push	hl
+	ex	de,hl
+	pop	ix
+	add	ix,bc
+	exx
+
+	srl	e
+	srl	e
+	srl	e
+
+;d e 	X Y in tiles 
+;b c      H L
+
+;test x
+	ld	a,d
+	cp	#20
+	jp	c,tile_markx0
+	dec	a
+	add	a,c
+	jp	nc,tile_mark_os	;out of screen 
+	xor	a
+tile_markx0
+	ld	l,a
+
+;test y
+	ld	a,e
+	cp	#18
+	jp	c,tile_marky0
+	dec	a
+	add	a,b	
+	jp	nc,tile_mark_os	;out of screen
+	xor	a
+tile_marky0
+	rrca
+	rrca
+	ld	h,a
+	rrca
+	and	#e0
+	or	l
+	ld	l,a
+	ld	a,h
+	and	#06
+	add	a,bgr_data/256
+	ld	h,a
+tile_mark0
+;testing column 	
+
+	ld	a,d	
+	cp	#20
+	jp	nc,tile_mark_col	;игнорируем колонку 
+				;переходим к следующей
+	push	de,hl,bc
+tile_mark1	
+	ld	a,e
+	cp	#18
+	jp	nc,tile_mark_row	;игнорируем ряд 
+
+	ld	a,(hl)
+	cp	2
+	jp	c,tile_mark_new
+;created
+	exx
+
+	ld	bc,(curr_tile)
+	ld	l,a
+	ld	b,mont_a/256
+	ld	h,b
+	ld	a,(hl)	
+	ld	h,mont_t/2048
+;
+	jp	tile_mark_tile
+
+tile_mark_new
+;create new tile
+	dec	h
+	ld	a,(hl)
+	inc	h
+	exx
+;проверяем вероятность фореграунда
+	cp	max_bg
+	jp	c,tile_yes_mark
+;если тайл поверх то увеличивем curr_tile но на экран не выводим.
+
+	ld	a,e
+	add	a,8
+	ld	e,a
+	adc	a,d
+	sub	e
+	ld	d,a	
+
+	ld	hl,curr_tile
+	inc	(hl)
+	exx
+	jp	tile_no_mark_tile
+tile_yes_mark
+	ld	bc,(curr_tile)
+	ld	l,a
+	ld	b,mont_a/256
+	ld	h,font_a/256
+	ld	a,(hl)	
+	ld	h,font_t/2048
+;
+tile_mark_tile
+;здесь можно покрасить тайл в другой цвет
+	and	#f8
+tile_mark_cmsk equ	$-1
+	or	#00
+tile_mark_cval equ	$-1
+
+	ld	(bc),a
+	add	hl,hl
+	add	hl,hl
+	add	hl,hl
+	dup	8
+	ldi
+	edup
+	ld	hl,curr_tile
+	ld	a,2
+curr_tile	equ	$-1
+	inc	(hl)
+	exx
+	ld	(hl),a	
+
+tile_no_mark_tile
+	ld	a,l
+	add	a,#20
+	ld	l,a
+	jr	nc,$+4
+	inc	h
+	inc	h
+tile_mark_row0
+	inc	e
+	djnz	tile_mark1
+
+	pop	bc,hl,de
+	inc	l
+tile_mark_col0
+	inc	d
+	dec	c
+	jp	nz,tile_mark0
+	pop	af
+	pop	de
+	add	a,a
+	add	a,a
+	add	a,a
+	ld	e,a
+	pop	bc
+;d X shift 
+;e tile_buff high  
+;ix tile_buff addr+#80
+	scf
+;C - in screen		
+	ret	
+tile_mark_os
+	pop	af
+	pop	bc
+	pop	bc
+	or	a
+;NC - out of screen flag	
+	ret
+tile_mark_col
+	ld	a,b
+	exx
+	ld	c,a
+	add	a,a
+	add	a,a
+	add	a,a
+	add	a,e
+	ld	e,a
+	adc	a,d
+	sub	e
+	ld	d,a	
+	ld	hl,curr_tile
+	ld	a,c
+	add	a,(hl)
+	ld	(hl),a	
+	exx
+	jp	tile_mark_col0
+tile_mark_row
+	exx
+	ld	a,e
+	add	a,8
+	ld	e,a
+	adc	a,d
+	sub	e
+	ld	d,a	
+	ld	hl,curr_tile
+	inc	(hl)
+	exx
+	jp	tile_mark_row0
+;---------------------------------
+force_color
+	bit	7,c
+	jr	z,no_force_color
+	ld	(tile_mark_cval),a	
+	ld	a,#78
+	ld	(tile_mark_cmsk),a
+	ret
+no_force_color
+	xor	a
+	ld	(tile_mark_cval),a	
+	ld	a,#7f
+	ld	(tile_mark_cmsk),a
+	ret
+
+;---------------------------------
+update_screen
+	call	mark_window	;освежаем окно игнорирования
+	ld	hl,-8
+	add	hl,sp
+	ld	(tile_sp0),hl
+	xor	a
+	ld	hl,bgr_data
+	ld	bc,#5840
+	call	drop_screen0
+	ld	bc,#5948
+	call	drop_screen0
+	ld	bc,#5a50
+	call	drop_screen0
+sprite_reset
+;сброс стартового тайла
+;вызывать каждый цикл перерисовки
+;после отрисовки экрана сбрасывается автоматом
+	ld	a,2
+	ld	(curr_tile),a
+	ret
+drop_screen0		
+	or	(hl)
+	call	nz,drop_tile
+	inc	l
+	jp	nz,drop_screen0
+	inc	h
+	inc	h
+	ret
+drop_tile
+	push	hl,bc
+	ld	e,l
+	ld	d,b
+	cp	2
+	jp	nc,drop_tile0
+	dec	(hl)
+	dec	h
+	ld	l,(hl)
+	ld	h,font_a/256
+	ld	a,(hl)
+	ld	(de),a
+	ld	h,font_t/2048
+	jp	drop_tile1
+
+drop_tile0
+	ld	(hl),1
+	ld	l,a
+	ld	h,mont_a/256
+	ld	a,(hl)
+	ld	(de),a
+	ld	h,mont_t/2048
+
+drop_tile1
+	ld	d,c
+	add	hl,hl
+	add	hl,hl
+	add	hl,hl
+	ld	c,(hl)
+	inc	l
+	ld	b,(hl)
+	inc	l
+	ld	sp,hl
+	ex	de,hl
+	dup	3
+	ld	(hl),c
+	inc	h
+	ld	(hl),b
+	inc	h
+	pop	bc
+	edup
+	ld	(hl),c
+	inc	h
+	ld	(hl),b
+	ld	sp,$
+tile_sp0	equ	$-2
+	pop	bc,hl
+	xor	a
+	ret		
+;---------------------------------
+
+set_window
+;hl yx coords
+;de lh size
+	call	reset_windows		
+
+	ld	(win_coor),hl
+	ld	(win_size),de
+	xor	a
+	ld	(mark_window),a
+	ret
+reset_windows
+	ld	a,(mark_window)
+	or	a
+	ret	nz
+	push	hl,de,bc
+;освежаем фон под окном диалогов
+;в следующем цикле окно будет удалено
+	ld	a,1	
+	call	fill_bgr_buf
+	pop	bc,de,hl
+	ld	a,#c9
+	ld	(mark_window),a
+	ret
+;---------------------------------
+mark_window ret
+;отключаем освежение фона и отрисовку спрайтов под окном диалогов
+;вызывать перед update_screen 
+	ld	a,0
+fill_bgr_buf
+	push	af
+	ld	de,#1111
+win_coor	equ	$-2
+	ld	bc,#0101
+win_size	equ	$-2
+
+	call	adr_bgr_data
+	pop	de
+fill_bgr0
+	push	hl,bc
+fill_bgr1	
+	ld	(hl),d
+	inc	l
+	djnz	fill_bgr1
+	pop	bc,hl
+	ld	a,l
+	add	a,#20
+	ld	l,a
+	jr	nc,$+4
+	inc	h
+	inc	h
+	dec	c
+	jr	nz,fill_bgr0
+	ret
+;---------------------------------
+show_win
+;hl yx coords
+;de hl size
+;a  color
+	ex	de,hl
+	push	hl
+	push	af
+	call	pix_de
+	pop	hl
+	pop	bc
+show_win1
+	push	bc,de
+show_win0
+	push	de
+	xor	a
+	dup	7
+	ld	(de),a
+	inc	d
+	edup
+	ld	(de),a
+	call	pix_atr
+	ld	a,h
+	ld	(de),a
+	pop	de
+	inc	e
+	djnz	show_win0
+	pop	de,bc	
+	call	dow_row_de
+	dec	c
+	jr	nz,show_win1
+	ret
+dow_row_de
+	ld	a,e
+	add	a,32
+	ld	e,a
+	ret	nc
+	ld	a,d
+	add	a,8
+	ld	d,a
+	ret
+down_de	
+	inc	d
+	ld	a,d
+	and	#07
+	ret	nz
+	ld	a,e
+	add	a,32
+	ld	e,a
+	ret	c
+	ld	a,d
+	sub	8
+	ld	d,a
+	ret	
+;---------------------------------

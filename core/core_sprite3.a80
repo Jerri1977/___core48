@@ -1,0 +1,330 @@
+;рисуем спрайт в тайлбуфере 
+;используя таблицу скролла
+;hl sprite source
+
+
+;masked
+;формат спрайта = байт маски + байт спрайта
+
+;спрайт имеет совместимый с С64 формат 
+;3*21 с маской
+;не более 21 и 126 байт на спрайт
+
+;спрайт до 3*24 
+
+sprite_draw3
+;клиппирование есть
+;hl адрес спрайта
+;de HX,Y
+;b high
+;c=flags	b3 - flipped
+;	b4 - blink	
+;	b7 - colorize sprites
+;	b 6___210 colormask
+;a LX
+
+	ld	(sprite_sp0),sp
+	bit	3,c
+	call	nz,flip_sprite3
+	call	set_flags3		
+	push	hl
+	ld	c,#03
+	call	tile_mark
+	pop	hl
+	ret	nc	;sprite is out of screen
+
+;d X shift 
+;e tile_buff high  
+;ix tile_buff addr+#80	
+
+	ld	a,b	;высота спрайта
+	ex	af,af'
+	ld	a,d
+	and	#07
+	jp	z,sprite_noroll3
+
+	add	a,a
+	add	a,(roll_table/256)-2
+	ld	d,a
+;recount_rolls3
+	ld	a,#80
+	ld	(r31s10),a
+	ld	(r31s11),a
+	add	a,e
+	ld	(r31s20),a
+	ld	(r31s21),a
+	add	a,e
+	ld	(r31s22),a
+	ld	(r31s23),a
+	add	a,e
+	ld	(r31s24),a
+	ld	(r31s25),a
+;--------------------------------		
+;left col
+	ld	c,(hl)
+	inc	hl
+	ld	b,(hl)
+	inc	hl
+	ld	sp,hl
+	ld	h,d	;roll_table
+
+	ex	af,af'
+	ld	e,a
+
+;----------------------------------
+sprite_loops3
+;	pop	bc
+	ld	l,c
+	ld	a,(hl)
+	or	(ix+0)
+r31s10	equ	$-1
+	ld	l,b
+	xor	(hl)
+b31s10	equ	$-1
+	ld	(ix+0),a	
+r31s11	equ	$-1
+
+	inc	h
+	ld	d,(hl)
+	ld	l,c
+	ld	a,(hl)
+	dec	h
+
+	pop	bc	
+
+	ld	l,c
+	or	(hl)
+	or	(ix+0)
+r31s20	equ	$-1
+
+	xor	d
+b31s18	equ	$-1
+	
+	ld	l,b
+	xor	(hl)
+b31s11	equ	$-1
+	ld	(ix+0),a
+r31s21	equ	$-1
+
+	inc	h
+	ld	d,(hl)
+	ld	l,c
+	ld	a,(hl)
+	dec	h
+
+	pop	bc	
+
+	ld	l,c
+	or	(hl)
+	or	(ix+0)
+r31s22	equ	$-1
+
+	xor	d
+b31s17	equ	$-1
+	
+	ld	l,b
+	xor	(hl)
+b31s12	equ	$-1
+	ld	(ix+0),a
+r31s23	equ	$-1
+
+	inc	h
+	ld	d,(hl)
+	ld	l,c
+	ld	a,(hl)
+	dec	h
+
+	or	(ix+0)
+r31s24	equ	$-1
+	xor	d
+b31s13	equ	$-1
+	ld	(ix+0),a
+r31s25	equ	$-1
+	inc	ix	;go down
+
+	dec	e
+	jp	z,end_sprite
+
+	pop	bc
+	jp	sprite_loops3
+set_flags3
+	push	af
+;c=flags	b3 - flipped
+;	b4 - blink	
+
+;	b7 - colorize sprites
+;	b 6___210 colormask
+
+	ld	a,c
+	and	#47
+	call	force_color
+
+	bit	4,c
+	jp	z,no_blink3
+;высветление отображение спрайта
+	ld	a,#b6 	;or (hl)
+	ld	(b31s10),a
+	ld	(b31s11),a
+	ld	(b31s12),a
+	ld	a,#b2 	;or d
+	ld	(b31s13),a
+	ld	(b31s17),a
+	ld	(b31s18),a
+
+	ld	a,#b0 	;or b
+	ld	(b31s14),a
+	ld	(b31s15),a
+	ld	(b31s16),a
+	pop	af
+	ret	
+no_blink3
+;нормальное отображение спрайта
+	ld	a,#ae 	;xor (hl)
+	ld	(b31s10),a
+	ld	(b31s11),a
+	ld	(b31s12),a
+	ld	a,#aa 	;xor d
+	ld	(b31s13),a
+	ld	(b31s17),a
+	ld	(b31s18),a
+
+	ld	a,#a8 	;xor b
+	ld	(b31s14),a
+	ld	(b31s15),a
+	ld	(b31s16),a
+	pop	af
+	ret
+
+sprite_noroll3
+;--------------------------------		
+;left col
+;recount_rolln3
+	ld	a,#80
+	ld	(r30s20),a
+	ld	(r30s21),a
+	add	a,e
+	ld	(r30s22),a
+	ld	(r30s23),a
+	add	a,e
+	ld	(r30s24),a
+	ld	(r30s25),a
+
+	ld	c,(hl)
+	inc	hl
+	ld	b,(hl)
+	inc	hl
+	ld	sp,hl
+
+	ex	af,af'
+	ld	e,a
+sprite_loopn3
+r30s2	
+	ld	a,c
+	or	(ix+0)
+r30s20	equ	$-1
+	xor	b	;
+b31s14	equ	$-1
+	ld	(ix+0),a	
+r30s21	equ	$-1
+
+	pop	bc
+	ld	a,c
+	or	(ix+0)
+r30s22	equ	$-1
+	xor	b	;
+b31s15	equ	$-1
+	ld	(ix+0),a	
+r30s23	equ	$-1
+
+	pop	bc
+	ld	a,c
+	or	(ix+0)
+r30s24	equ	$-1
+	xor	b	;
+b31s16	equ	$-1
+	ld	(ix+0),a	
+r30s25	equ	$-1
+
+	inc	ix	;go down
+	dec	e
+	jp	z,end_sprite
+
+	pop	bc
+	jp	sprite_loopn3
+
+
+end_sprite
+	ld	sp,$
+sprite_sp0 equ	$-2
+	ret
+
+
+flip_sprite3
+	push	de,bc
+	ld	(flip_sp3sp0),sp		
+	ld	c,(hl)
+	inc	hl
+	ld	b,(hl)
+	inc	hl
+	ld	sp,hl
+	ld	h,flip_tbl/256
+count=flip_spr
+	dup	24
+	ld	l,c
+	ld	e,(hl)
+	ld	l,b
+	ld	d,(hl)
+	ld	(count+4),de
+	pop	bc
+	ld	l,c
+	ld	e,(hl)
+	ld	l,b
+	ld	d,(hl)
+	ld	(count+2),de
+	pop	bc
+	ld	l,c
+	ld	e,(hl)
+	ld	l,b
+	ld	d,(hl)
+	ld	(count+0),de
+	pop	bc
+count=count+6
+edup
+	org	$-1
+	ld	sp,$
+flip_sp3sp0 equ	$-2
+	ld	hl,flip_spr
+	pop	bc,de
+	ret
+
+	ifused	mult_126
+mult_126
+;hl sprite_list_addr
+;a  sprite number		
+
+;hl sprite_adr
+	ld	c,a
+	ld	b,0
+	ld	d,b
+	ld	e,c
+	ex	de,hl
+;
+	add	hl,hl	;*2	
+	add	hl,hl	;*4
+	add	hl,hl	;*8	
+	add	hl,hl	;*16	
+	add	hl,hl	;*32	
+	add	hl,hl	;*64	
+	sbc	hl,bc	;*63
+	add	hl,hl	;*126	
+	add	hl,de
+	ret
+	endif
+
+
+
+
+
+
+
+

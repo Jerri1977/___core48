@@ -1,0 +1,246 @@
+;рисуем спрайт в тайлбуфере 
+;используя таблицу скролла
+;hl sprite source
+
+
+;masked
+;формат спрайта = байт маски + байт спрайта
+
+;спрайт имеет совместимый 
+;2*32 с маской
+;не более  128 байт на спрайт
+
+sprite_draw2
+;клиппирование не требуется
+;hl адрес спрайта
+;de X,Y
+;b high
+;c=0 normal 1 flipped sprite
+	ld	(sprite_sp0),sp
+	bit	3,c
+	call	nz,flip_sprite2
+	call	set_flags2
+	push	hl
+	ld	c,#02
+	call	tile_mark
+	pop	hl
+	ret	nc	;sprite is out of screen
+
+;d X shift 
+;e tile_buff high  
+;ix tile_buff addr+#80	
+
+	ld	a,b	;высота спрайта
+	ex	af,af'
+	ld	a,d
+	and	#07
+	jp	z,sprite_noroll2
+
+	add	a,a
+	add	a,(roll_table/256)-2
+	ld	d,a
+;recount_rolls2
+	ld	a,#80
+	ld	(r21s10),a
+	ld	(r21s11),a
+	add	a,e
+	ld	(r21s22),a
+	ld	(r21s23),a
+	add	a,e
+	ld	(r21s24),a
+	ld	(r21s25),a
+
+;--------------------------------		
+;left col
+	ld	c,(hl)
+	inc	hl
+	ld	b,(hl)
+	inc	hl
+	ld	sp,hl
+	ld	h,d	;roll_table
+
+	ex	af,af'
+	ld	e,a
+
+;----------------------------------
+sprite_loops2
+;	pop	bc
+	ld	l,c
+	ld	a,(hl)
+	or	(ix+0)
+r21s10	equ	$-1
+	ld	l,b
+	xor	(hl)
+b21s10	equ	$-1
+	ld	(ix+0),a	
+r21s11	equ	$-1
+
+	inc	h
+	ld	d,(hl)
+	ld	l,c
+	ld	a,(hl)
+	dec	h
+
+	pop	bc	
+
+	ld	l,c
+	or	(hl)
+	or	(ix+0)
+r21s22	equ	$-1
+
+	xor	d
+b21s13	equ	$-1
+	
+	ld	l,b
+	xor	(hl)
+b21s11	equ	$-1
+
+	ld	(ix+0),a
+r21s23	equ	$-1
+
+	inc	h
+	ld	d,(hl)
+	ld	l,c
+	ld	a,(hl)
+	dec	h
+
+	or	(ix+0)
+r21s24	equ	$-1
+	xor	d
+b21s17	equ	$-1
+	ld	(ix+0),a
+r21s25	equ	$-1
+	inc	ix	;go down
+
+	dec	e
+	jp	z,end_sprite
+
+	pop	bc
+	jp	sprite_loops2
+set_flags2
+	push	af
+;c=flags	b3 - flipped
+;	b4 - blink	
+
+;	b7 - colorize sprites
+;	b 6___210 colormask
+
+	ld	a,c
+	and	#47
+	call	force_color
+
+	bit	4,c
+	jp	z,no_blink2
+;высветление отображение спрайта
+	ld	a,#b6 	;or (hl)
+	ld	(b21s10),a
+	ld	(b21s11),a
+	ld	a,#b2 	;or d
+	ld	(b21s13),a
+	ld	(b21s17),a
+
+	ld	a,#b0 	;or b
+	ld	(b21s14),a
+	ld	(b21s15),a
+	pop	af
+	ret	
+no_blink2
+;нормальное отображение спрайта
+	ld	a,#ae 	;xor (hl)
+	ld	(b21s10),a
+	ld	(b21s11),a
+	ld	a,#aa 	;xor d
+	ld	(b21s13),a
+	ld	(b21s17),a
+
+	ld	a,#a8 	;xor b
+	ld	(b21s14),a
+	ld	(b21s15),a
+	pop	af
+	ret
+
+
+sprite_noroll2
+;--------------------------------		
+;left col
+;recount_rolln2
+	ld	a,#80
+	ld	(r20s20),a
+	ld	(r20s21),a
+	add	a,e
+	ld	(r20s22),a
+	ld	(r20s23),a
+
+	ld	c,(hl)
+	inc	hl
+	ld	b,(hl)
+	inc	hl
+	ld	sp,hl
+
+	ex	af,af'
+	ld	e,a
+sprite_loopn2
+r20s2	
+	ld	a,c
+	or	(ix+0)
+r20s20	equ	$-1
+	xor	b
+b21s15	equ	$-1
+	ld	(ix+0),a	
+r20s21	equ	$-1
+
+	pop	bc
+	ld	a,c
+	or	(ix+0)
+r20s22	equ	$-1
+	xor	b
+b21s14	equ	$-1
+	ld	(ix+0),a	
+r20s23	equ	$-1
+
+	inc	ix	;go down
+	dec	e
+	jp	z,end_sprite
+
+	pop	bc
+	jp	sprite_loopn2
+
+	
+	ifnused	end_sprite
+end_sprite
+	ld	sp,$
+sprite_sp0 equ	$-2
+	ret
+	endif
+
+flip_sprite2
+	push	bc,de
+	ld	(flip_sp2sp0),sp		
+	ld	c,(hl)
+	inc	hl
+	ld	b,(hl)
+	inc	hl
+	ld	sp,hl
+	ld	h,flip_tbl/256
+count=flip_spr
+	dup	32
+	ld	l,c
+	ld	e,(hl)
+	ld	l,b
+	ld	d,(hl)
+	ld	(count+2),de
+	pop	bc
+	ld	l,c
+	ld	e,(hl)
+	ld	l,b
+	ld	d,(hl)
+	ld	(count+0),de
+	pop	bc
+count=count+4
+edup
+	org	$-1
+	ld	sp,$
+flip_sp2sp0 equ	$-2
+	pop	de,bc
+	ld	hl,flip_spr
+	ret

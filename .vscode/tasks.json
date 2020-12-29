@@ -1,0 +1,53 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "SjASMPlus",
+            "type": "shell",
+            "command": "..\\..\\SJASM\\SJASMPLUS",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "args": [
+                "--nologo",
+                "main.a80"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "isBackground": false,
+            "presentation": {
+                "echo": false,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "problemMatcher": "$errmatcher-sjasmplus"
+        },
+        {
+            "label": "unReal",
+            "type": "shell",
+            "command": "qsave.sna",
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "isBackground": false,
+            "presentation": {
+                "echo": false,
+                "reveal": "always",
+                "focus": true,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": true
+            },
+            "problemMatcher": "$errmatcher-sjasmplus"
+        }
+   ]
+}

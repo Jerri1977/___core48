@@ -1,0 +1,276 @@
+print_8_l
+	pop	hl
+print_8
+;hl text
+;0  -endmarker
+;#d -nextline
+;32 -127 printable chars
+;128-159 x koo
+print_x	equ	128
+;160-183 y koo
+print_y 	equ	160
+;184-191 ink
+print_ink equ	184
+;192-199 paper
+print_paper equ	192
+;200-201 bright
+print_bright equ	200
+;202-209 ink2
+print_ink2 equ	202
+;210-217 paper2
+print_paper2 equ	210
+;218-219 bright2
+print_bright2 equ	218
+	macro 	pr_x koor
+	db	print_x+koor
+	endm
+	macro 	pr_y koor
+	db	print_y+koor
+	endm
+	macro	ink_u color
+	db	print_ink+color
+	endm
+	macro	ink_d color
+	db	print_ink2+color
+	endm
+	macro	paper_u color
+	db	print_paper+color
+	endm
+	macro	paper_d color
+	db	print_paper2+color
+	endm
+	macro	bright_u color
+	db	print_bright+color
+	endm
+	macro	bright_d color
+	db	print_bright2+color
+	endm
+
+	ld	a,(hl)	
+	inc	hl
+	or	a
+	ret	z	
+	push	hl
+	ld	hl,print_8_l
+	push	hl
+	sub	#20
+	jp	c,test_8_codes
+	sub	#60
+	jp	nc,test_codes
+	call	count_font
+
+	dup	7
+	ld	a,(hl)
+	ld	(de),a
+	inc	hl
+	inc	d
+	edup
+	ld	a,(hl)
+	ld	(de),a
+	call	pix_atr
+	ld	a,(attr_u)
+	ld	(de),a
+
+	ld	hl,(koorx)
+	inc	l
+	ld	a,l
+	cp	#20
+	jr	nz,print_8_x
+test_8_0d	
+	ld	l,0
+	inc	h
+	ld	a,h
+	cp	#18
+	jr	nz,print_8_x
+	ld	h,0
+print_8_x
+	ld	(koorx),hl
+	ret
+test_8_codes
+	ld	hl,(koorx)
+	cp	#ed	
+	jr	z,test_8_0d
+	ret
+count_font	
+	ld	l,a
+	ld	h,0
+	add	hl,hl
+	add	hl,hl
+	add	hl,hl
+	ld	de,font_char-#0500
+	add	hl,de
+	ld	de,(koorx)	;yx
+pix_de
+	ld	a,d
+	rrca
+	rrca	
+	rrca
+	and	#e0
+	add 	a,e
+	ld	e,a
+	ld	a,d
+	and	#18
+	or	a,#40
+	ld	d,a
+	ret
+pix_atr
+	ld	a,d
+	rra
+	rra
+	rra
+	and	#03
+	add	a,#58
+	ld	d,a
+	ret
+
+
+
+
+
+koorx	db	0
+koory	db	0
+attr_u	db	0
+attr_d	db	0
+	
+
+test_codes
+	cp	#20
+	jr	nc,print_not_x
+	ld	(koorx),a
+	ret
+print_not_x
+	sub	#20
+	cp	#18
+	jr	nc,print_not_y
+	ld	(koory),a
+	ret
+print_not_y
+	ld	hl,attr_u
+	sub	#18
+	cp	#08
+	jr	nc,print_not_i1
+set_ink
+	ld	c,a
+	ld	a,(hl)
+	and	#f8
+	or	c
+	ld	(hl),a
+	ret
+print_not_i1
+	sub	#08
+	cp	#08
+	jr	nc,print_not_p1
+set_paper
+	add	a,a
+	add	a,a
+	add	a,a
+	ld	c,a
+	ld	a,(hl)
+	and	#c7
+	or	c
+	ld	(hl),a
+	ret
+print_not_p1
+	sub	#08
+	cp	#02
+	jr	nc,print_not_b1
+set_bright
+	rrca
+	rrca
+	ld	c,a
+	ld	a,(hl)
+	and	#bf
+	or	c
+	ld	(hl),a
+	ret
+print_not_b1
+	sub	#02
+	ld	hl,attr_d
+	cp	#08
+	jr	c,set_ink
+	sub	#08
+	cp	#08
+	jr	c,set_paper
+	sub	#08
+	cp	#02
+	jr	c,set_bright
+	ret
+;128-159 x koo
+;160-183 y koo
+;184-191 ink
+;192-199 paper
+;200-201 bright
+;202-209 ink2
+;210-217 paper2
+;218-219 bright2
+print_16_l
+	pop	hl
+print_16
+	ld	a,(hl)	
+	inc	hl
+	or	a
+	ret	z	
+	push	hl
+	ld	hl,print_16_l
+	push	hl
+	sub	#20
+	jp	c,test_16_codes
+	sub	#60
+	jp	nc,test_codes
+	call	count_font
+
+
+	ld	a,(attr_u)
+	ld	c,a	
+	call	print_16_n
+	ld	de,(koorx)
+	inc	d
+	ld	a,d
+	cp	#18
+	jr	c,$+4
+	ld	d,0
+	call	pix_de
+	ld	a,(attr_d)
+	ld	c,a	
+	call	print_16_n
+
+	ld	hl,(koorx)
+	inc	l
+	ld	a,l
+	cp	#20
+	jr	nz,print_16_x
+test_16_0d	
+	ld	l,0
+	inc	h
+	inc	h
+	ld	a,h
+	cp	#18
+	jr	c,print_16_x
+	sub	#18
+	ld	h,a
+print_16_x
+	ld	(koorx),hl
+	ret
+test_16_codes
+	ld	hl,(koorx)
+	cp	#ed	
+	jr	z,test_16_0d
+	ret
+print_16_n	
+	dup	3
+	ld	a,(hl)
+	ld	(de),a
+	inc	hl
+	inc	d
+	ld	(de),a
+	inc	d
+	edup
+	ld	a,(hl)
+	ld	(de),a
+	inc	hl
+	inc	d
+	ld	(de),a
+	call	pix_atr
+	ld	a,c
+	ld	(de),a
+	ret

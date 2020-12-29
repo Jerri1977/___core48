@@ -1,0 +1,711 @@
+
+
+
+
+
+	device 	ZXSPECTRUM48
+	include	"core/core_define.a80"
+	include	"core/core_main.a80"
+	org	font_char
+	incbin	"font.fnt"
+	org	font_t
+	db	#00,#00,#00,#00,#00,#00,#00,#00
+	db	#00,#aa,#00,#aa,#00,#aa,#00,#aa
+	db	#00,#aa,#00,#aa,#00,#aa,#00,#aa
+	db	#ff,#ff,#ff,#ff,#ff,#ff,#ff,#ff
+
+	db	#00,#ff,#ff,#ff,#ff,#ff,#ff,#ff
+	db	#00,#00,#ff,#ff,#ff,#ff,#ff,#ff
+	db	#00,#00,#00,#ff,#ff,#ff,#ff,#ff
+	db	#00,#00,#00,#00,#ff,#ff,#ff,#ff
+
+	db	#00,#00,#00,#00,#00,#ff,#ff,#ff
+	db	#00,#00,#00,#00,#00,#00,#ff,#ff
+	db	#00,#00,#00,#00,#00,#00,#00,#ff
+
+
+	org	font_a
+	db	#07,07,#0f,#46
+	db	#46,#46,#46,#46,#46,#46,#46
+
+
+	org	free_a
+;------------------------------
+;рекомендуется список обработчиков прерывания помещать здесь
+	include	"int_list.a80"
+;game data & code start here
+sprite_set
+	include	"gfx/hero_rep.a80"
+	include	"gfx/diamond_rep.a80"
+	include	"gfx/stick_rep.a80"
+	include	"int_processors.a80"
+;---------------------------------
+;game start here
+;
+game_start
+;включаем обработчик 1 (menu)
+	ld	a,1
+	ld	(int_mode),a
+
+
+	call	sprite_reset
+	call	init_roll
+	call	init_flip	
+	call	test_kemp
+
+	ld	de,#0000
+	ld	c,#01
+game_s0
+	call	place_tile
+	inc	e
+	ld	a,e
+	and	#1f
+	jr	nz,game_s0
+	ld	e,a
+
+	ld	a,c
+	xor	3
+	ld	c,a
+
+	inc	d
+	ld	a,d
+	cp	#18
+	jr	nz,game_s0
+
+	xor	a
+	out	(#fe),a
+
+	call	update_screen
+
+	ld	bc,#1803
+	ld	hl,bit_screen
+	ld	de,#0000
+	ld	a,#80
+	ex	af,af'
+drop_sc0
+	push	hl,de,bc
+drop_sc1	
+	ex	af,af'
+	add	a,a
+	jr	nz,drop_sc10
+	ld	a,(hl)	
+	inc	hl
+	rla
+drop_sc10	
+	push	hl,bc
+	jr	c,$+4
+	ld	c,0
+	ex	af,af'
+	call	place_tile
+	pop	bc,hl
+	inc	e
+	ld	a,e
+	and	#1f
+	jr	nz,drop_sc1
+	ld	e,a
+
+	push	hl,de,bc
+	halt
+	call	update_screen
+	pop	bc,de,hl
+
+	inc	d
+	ld	a,d
+	cp	#18
+	jr	nz,drop_sc1
+	dec	d
+	ld	e,1
+	ld	hl,ground
+	ld	b,30	
+drop_sc11
+	push	hl,bc	
+	ld	c,(hl)
+	call	place_tile
+	pop	bc,hl
+	inc	hl
+	inc	e
+	djnz	drop_sc11
+
+	xor	a
+	ld	(hero_act),a
+	ld	hl,#1500
+	ld	(hero_yy),hl
+	ld	hl,#0e80
+	ld	(hero_xx),hl
+game_s1	
+
+	ld	hl,font_char+#208
+	ld	de,#14a0
+	ld	bc,#1887
+	ld	a,#02
+	call	tilesprite
+
+	call	hero_proc
+	call	hero_count
+	ld	hl,hero_struc
+
+	ld	e,(hl)
+	inc	hl
+
+	ld	a,(hl)
+	inc	hl
+	ld	d,(hl)
+	inc	hl
+
+	ld	c,(hl)
+	inc	hl
+	ld	b,(hl)
+
+	ld	hl,(hero_spr)
+	call	sprite_draw3
+
+	ld	hl,font_char+#108
+;hl адрес спрайта
+;de HX,Y*8	
+;b high*8
+;a len
+;c=flags	
+;	b7 - colorize sprites
+;	b 6___210 colormask
+
+	ld	de,#04a0
+	ld	bc,#1883
+	ld	a,#02
+	call	tilesprite
+	halt
+	call	update_screen
+	call	menu_control
+	ld	a,0
+game_flag equ	$-1
+	cp	2	
+	jp	c,game_s1
+	jr	$
+bit_screen
+	db	#ff,#fc,#3f,#ff
+	db	#ff,#00,#00,#ff
+	db	#fe,#00,#00,#7f
+	db	#fc,#00,#00,#3f
+	db	#f8,#00,#00,#1f
+	db	#f0,#00,#00,#0f
+	db	#e0,#00,#00,#07
+	db	#c0,#00,#00,#03
+	db	#80,#00,#00,#01
+	db	#80,#00,#00,#01
+	db	#80,#00,#00,#01
+	db	#80,#00,#00,#01
+	db	#80,#00,#00,#01
+	db	#80,#00,#00,#01
+	db	#80,#00,#00,#01
+	db	#80,#00,#00,#01
+	db	#80,#00,#00,#01
+	db	#80,#00,#00,#01
+	db	#80,#00,#00,#01
+	db	#80,#00,#00,#01
+	db	#80,#00,#00,#01
+	db	#80,#00,#00,#01
+	db	#80,#00,#00,#01
+	db	#ff,#ff,#ff,#ff
+ground
+	db	#04,#05,#06,#06,#05,#06,#07,#07,#07,#08,#07,#06,#06,#05,#05
+	db	#06,#07,#08,#09,#0a,#0a,#09,#09,#08,#07,#06,#06,#05,#05,#04
+
+hero_spn	db	0	
+hero_act	db	0
+hero_ds	db	0
+hero_dh	db	0
+hero_ls	db	0
+hero_rs	db	0
+hero_dx	dw	0
+hero_dy	dw	0
+hero_gravity equ	#0030
+hero_yy	dw	0
+hero_xx	dw	0
+
+hero_struc
+hero_y	db	0	;e
+hero_x	dw	0	;a,d
+hero_sf	db	#00
+hero_sx	db	#15
+hero_spr	dw	sprite_set
+
+hero_proc
+	call	hero_touch
+;	call	test_joypad
+
+
+	call	proc_hero
+
+	ld	hl,(hero_dy)
+	ld	de,(hero_yy)
+	add	hl,de
+	ld	(hero_yy),hl
+	call	hero_dsurf
+	and	#c0
+	call	nz,hero_set_stand
+
+	ld	hl,(hero_dx)
+	ld	de,(hero_xx)
+	add	hl,de
+	ld	(hero_xx),hl
+	ld	hl,0
+	ld	(hero_dx),hl
+	ret	
+proc_hero
+	ld	a,(hero_act)
+	call	stek_jump
+	dw	hero_stand
+	dw	hero_fall
+hero_set_stand
+	ld	a,(hero_act)
+	or	a
+	ret	z
+	xor	a
+	ld	(hero_act),a
+	ld	(hero_spn),a
+	ld	hl,#0000
+	ld	(hero_dy),hl
+hero_set_surface
+	ld	hl,hero_dh
+	ld	c,(hl)
+	ld	hl,hero_yy
+	ld	(hl),a
+	inc	hl
+	ld	a,(hl)
+	and	#f8
+	or	c
+	ld	(hl),a
+	ret
+hero_set_fall
+	ld	a,1
+	ld	(hero_act),a
+	ld	a,4
+	ld	(hero_spn),a
+	ret
+hero_stand
+	ld	a,(hero_ds)
+	and	#c0
+	jp	z,hero_set_fall
+
+	call	hero_moveh
+	call	hero_anim
+
+	ld	(hero_spn),a
+	jp	hero_set_surface
+hero_fall
+	ld	a,(hero_ds)
+	and	#c0
+	jp	nz,hero_set_stand
+
+	ld	hl,(hero_dy)
+	ld	de,hero_gravity
+	call	add_mod
+	ld	(hero_dy),hl
+	ret
+add_mod
+	ex	de,hl
+
+	bit	7,d
+	jp	nz,neg_mod
+	add	hl,de
+	ld	a,h
+	cp	8
+	ret	c
+	ex	de,hl
+	ret
+neg_mod
+	add	hl,de
+	ld	a,h	
+	cp	-8
+	ret	nc
+	ex	de,hl
+	ret
+hero_moveh
+	ld	a,(key_holded)
+	and	#03
+	call	stek_jump
+	dw	move_no
+	dw	move_right
+	dw	move_left
+	dw	move_no
+move_no
+	ret	
+move_right
+	ld	a,(hero_rs)
+	and	#80
+	ret	nz
+	ld	de,#0020
+	ld	hl,(hero_dx)	
+	add	hl,de
+	ld	(hero_dx),hl
+	ld	hl,hero_sf
+	res	3,(hl)
+	ret
+
+move_left
+	ld	a,(hero_ls)
+	and	#80
+	ret	nz
+	ld	de,-#0020
+	ld	hl,(hero_dx)	
+	add	hl,de
+	ld	(hero_dx),hl
+	ld	hl,hero_sf
+	set	3,(hl)
+	ret
+hero_anim	
+	ld	a,(key_holded)
+	and	#03
+	jr	z,hero_anim0
+	cp	#03
+	jr	z,hero_anim0
+
+	ld	de,(hero_dx)
+	ld	a,d
+	or	e
+	jr	z,hero_anim0
+	ld	a,(click)
+	rra
+	rra
+	rra
+	and	#03
+	ret
+hero_anim0
+	xor	a
+	ret	
+hero_touch
+	call	hero_dsurf
+	call	hero_rsurf
+	call	hero_lsurf
+	ret
+
+hero_dsurf	
+;test_down_surface		
+	ld	hl,(hero_xx)
+	ld	bc,8*32
+	add	hl,bc
+	ld	e,h	
+	ld	a,(hero_yy+1)
+	rra
+	rra
+	rra
+	and	#1f
+	ld	d,a
+	call	get_tile
+	ld	l,a
+	ld	h,font_f/256
+	ld	a,(hl)
+	push	af
+	and	#07
+	ld	(hero_dh),a
+
+	ld	hl,(hero_xx)
+	ld	bc,15*32
+	add	hl,bc
+	ld	e,h	
+	ld	a,(hero_yy+1)
+	rra
+	rra
+	rra
+	and	#1f
+	ld	d,a
+	call	get_tile
+	ld	l,a
+	ld	h,font_f/256
+	ld	a,(hl)
+	pop	bc
+	or	b
+	ld	(hero_ds),a
+	ld	a,(hl)
+	and	#07
+	ld	hl,hero_dh
+	cp	(hl)
+	ret	nc
+	ld	(hl),a
+	ret
+;de Y 0-23, X 0-31 
+;a  -tile num
+hero_lsurf	
+;test_left_surface		
+	ld	hl,(hero_xx)
+	ld	bc,-1*32
+	add	hl,bc
+	ld	e,h	
+
+	ld	a,(hero_yy+1)
+	sub	8
+	rra
+	rra
+	rra
+	and	#1f
+	ld	d,a
+	call	get_tile
+	ld	l,a
+	ld	h,font_f/256
+	ld	a,(hl)
+
+	push	af
+	ld	hl,(hero_xx)
+	ld	bc,-1*32
+	add	hl,bc
+	ld	e,h	
+	ld	a,(hero_yy+1)
+	sub	#15
+	rra
+	rra
+	rra
+	and	#1f
+	ld	d,a
+	call	get_tile
+	ld	l,a
+	ld	h,font_f/256
+	ld	a,(hl)
+	pop	bc
+	or	b
+	ld	(hero_ls),a
+	ret
+hero_rsurf	
+;test_right_surface		
+	ld	hl,(hero_xx)
+	ld	bc,24*32
+	add	hl,bc
+	ld	e,h	
+
+	ld	a,(hero_yy+1)
+	sub	8
+	rra
+	rra
+	rra
+	and	#1f
+	ld	d,a
+	call	get_tile
+	ld	l,a
+	ld	h,font_f/256
+	ld	a,(hl)
+
+	push	af
+	ld	hl,(hero_xx)
+	ld	bc,24*32
+	add	hl,bc
+	ld	e,h	
+	ld	a,(hero_yy+1)
+	sub	#15
+	rra
+	rra
+	rra
+	and	#1f
+	ld	d,a
+	call	get_tile
+	ld	l,a
+	ld	h,font_f/256
+	ld	a,(hl)
+	pop	bc
+	or	b
+	ld	(hero_rs),a
+	ret
+
+
+
+hero_count
+	ld	hl,(hero_xx)
+	ld	(hero_x),hl
+	ld	a,(hero_yy+1)
+	sub	#15
+	ld	(hero_y),a
+
+	ld	hl,hero_000
+	ld	a,(hero_spn)	
+	call	mult_126
+	ld	(hero_spr),hl
+	ret
+	align	256
+	display	$
+font_f	db	#00,#40,#40,#80
+	db	#81,#82,#83,#84,#85,#86,#87
+
+	call	update_screen
+	ld	hl,sprite_set
+	ld	de,#021b
+	ld	bc,#1500
+	ld	a,0
+	call	sprite_draw3
+
+
+	ld	hl,sprite_set
+	ld	de,#061b
+	ld	bc,#1510
+	ld	a,0
+	call	sprite_draw3
+
+	ld	hl,sprite_set
+	ld	de,#0a1b
+	ld	bc,#15c6
+	ld	a,0
+	call	sprite_draw3
+
+	ld	hl,sprite_set+126
+	ld	de,#023c
+	ld	bc,#1508
+	ld	a,#80
+	call	sprite_draw3
+
+
+	ld	hl,sprite_set+126
+	ld	de,#063c
+	ld	bc,#1518
+	ld	a,#80
+	call	sprite_draw3
+
+	ld	hl,sprite_set+126
+	ld	de,#0a3c
+	ld	bc,#15ce
+	ld	a,#80
+	call	sprite_draw3
+
+
+	ld	hl,diamond_000
+	ld	de,#1018
+	ld	bc,#1000
+	ld	a,0
+	call	sprite_draw2
+
+	ld	hl,diamond_000
+	ld	de,#1318
+	ld	bc,#1010
+	ld	a,0
+	call	sprite_draw2
+
+	ld	hl,diamond_000
+	ld	de,#1618
+	ld	bc,#10c5
+	ld	a,0
+	call	sprite_draw2
+
+
+	ld	hl,diamond_000
+	ld	de,#1031
+	ld	bc,#1008
+	ld	a,#80
+	call	sprite_draw2
+
+	ld	hl,diamond_000
+	ld	de,#1331
+	ld	bc,#1018
+	ld	a,#80
+	call	sprite_draw2
+
+	ld	hl,diamond_000
+	ld	de,#1631
+	ld	bc,#10cd
+	ld	a,#80
+	call	sprite_draw2
+;
+
+	ld	hl,stick_000
+	ld	de,#1048
+	ld	bc,#4000
+	ld	a,0
+	call	sprite_draw1
+
+	ld	hl,stick_000
+	ld	de,#1248
+	ld	bc,#4010
+	ld	a,0
+	call	sprite_draw1
+
+	ld	hl,stick_000
+	ld	de,#1448
+	ld	bc,#40c5
+	ld	a,0
+	call	sprite_draw1
+
+
+	ld	hl,stick_000
+	ld	de,#1649
+	ld	bc,#4008
+	ld	a,#80
+	call	sprite_draw1
+
+	ld	hl,stick_000
+	ld	de,#1849
+	ld	bc,#4018
+	ld	a,#80
+	call	sprite_draw1
+
+	ld	hl,stick_000
+	ld	de,#1a49
+	ld	bc,#40cd
+	ld	a,#80
+	call	sprite_draw1
+
+
+	ld	hl,#0501
+	ld	de,#1e07
+	call	set_window
+	ld	a,#4f
+	call	show_win
+
+	call	update_screen
+
+	ld	hl,text
+	call	print_8
+
+	ld	hl,text2
+	call	print_16
+;включаем обработчик 2 (game)
+
+	call	test_kemp
+
+	ld	a,2
+	ld	(int_mode),a
+loop0	
+
+	jr	loop0
+text	
+	pr_x	0
+	pr_y	0
+	ink_u	6
+	paper_u	2
+	bright_u	1
+	defb	"Hello",#d
+	defb	"print route works fine"
+	nop
+text2
+	pr_x	0
+	pr_y	#16
+	ink_u	7
+	paper_u	3
+	bright_u	1
+	ink_d	6
+	paper_d	3
+	bright_d	0
+	defb	"BIG print route works fine"
+	nop
+
+;---------------------------
+
+	include	"menu_control.a80"
+
+;--------------------------------------------------------------------------------
+;секция анимации фона
+;
+	include	"add_code/bgr_anim.a80"
+	align	256
+	display	$
+bgr_buf 	ds	256	;3 списка анимированных тайлов для третей экрана
+
+;все анимации всех тайлов. конец текущей анимации - первый номер анимационной цепочки.
+
+tile_list db	tile_time-tile_list-1	
+	db	 1, 2, 3, 4, 1
+tile_time	db	 1, 1, 1, 1, 1 	;tile timer
+;--------------------------------------------------------------------------------
+
+
+
+
+	display	"game free: ",$,",",start_engine-$
+
+	savesna 	"qsave.sna",beginning			
+	labelslist "d:\_work\dropbox\unreal\user.l"	
+	display	"start at ",beginning	
+	display	" "

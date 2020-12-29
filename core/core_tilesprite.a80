@@ -1,0 +1,69 @@
+;рисуем спрайт в тайлбуфере 
+;hl sprite source
+
+;тайлспрайт предназначен для вывода спрайта состоящего из блоков в спрайт массив 
+;нет разворота
+
+tilesprite
+;клиппирование есть
+;вывод с точностью до знакоместа
+;hl адрес спрайта
+;de HX,Y*8	
+;b high*8
+;a len
+;c=flags	
+;	b7 - colorize sprites
+;	b 6___210 colormask
+
+	ex	af,af'
+;--------------------------
+;выравниваем размер H и координату Y
+;по границам знакоместа
+
+	ld	a,e
+	and	#f8
+	ld	e,a
+	ld	a,b
+	and	#F8
+	ld	b,a
+;--------------------------
+	ld	a,c
+	and	#47
+	call	force_color
+	push	hl
+	ex	af,af'
+	ld	c,a
+	xor	a
+	call	tile_mark
+	pop	hl
+	ret	nc	;sprite is out of screen
+
+;d X shift 
+;e tile_buff high  
+;ix tile_buff addr+#80	
+
+
+
+	ld	de,-#80
+	add	ix,de
+	ld	d,hx
+	ld	e,lx
+
+	ld	a,b
+	ld	b,c
+	ld	c,a
+tilesprite0
+	push	bc
+	ld	b,0
+	ldir
+	pop	bc
+	djnz	tilesprite0
+	ret
+
+
+
+
+
+
+
+

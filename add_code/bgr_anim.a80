@@ -1,0 +1,96 @@
+;--------------------------------
+;формат таблицы tile_speed	
+;количество анимированных тайлов - 0-127
+;выровнена по NN00	обща€ длина 512 байт
+;	байт скорости следующего тайла,номер следующего тайла
+
+background_scan
+	ld	b,0
+	exx
+	ld	hl,bgr_buf
+	ld	de,bgr_tile	
+	ld	bc,#0301
+back_s0
+	push	bc
+	push	hl	
+	inc	l
+back_s01	
+	ld	a,(de)
+	exx
+	ld	hl,tile_list
+	ld	c,(hl)
+	inc	hl
+
+	push	bc
+	cpir	
+	pop	bc
+	jr	nz,back_s02
+	dec	bc
+	add	hl,bc	
+	ld	a,(hl)	;counter
+	exx
+	ld	(hl),e
+	inc	l
+	ld	(hl),a
+	inc 	l
+	inc	c
+	exx
+back_s02
+	exx
+	inc	e
+	jr	nz,back_s01
+	inc	d
+	inc	d
+	ld	a,c
+	pop	bc
+	ld	(bc),a
+	pop	bc
+	djnz	back_s0
+	ret	
+
+background_frame
+	ld	b,0
+	exx
+	ld	c,3
+	ld	d,bgr_tile/256
+	ld	hl,bgr_buf
+back_f0	
+	ld	b,(hl)	;1=0 2+=1+
+	jr	back_f1
+back_f11
+	ld	e,(hl)
+	inc	l
+	dec	(hl)
+	jr	nz,back_f1
+	ld	a,(de)
+	exx
+	ld	hl,tile_list
+	ld	c,(hl)
+	inc	hl
+	push	bc
+	cpir	
+	pop	bc
+	ld	a,(hl)	;nexttile
+	add	hl,bc	
+	ex	af,af'
+	ld	a,(hl)	;counter
+	exx
+	ld	(hl),a
+	ex	af,af'		
+	ld	(de),a
+	inc	d
+	ld	a,1
+	ld	(de),a
+	dec	d
+back_f1
+	inc	l
+	djnz	back_f11
+	inc	d
+	inc	d	
+	dec	c
+	jr	nz,back_f0
+	ret
+
+
+
+

@@ -1,0 +1,15 @@
+;---------------------------------
+int_menu		;1 прерывание из меню
+int_game0
+int_game1
+
+	call	click_w
+	call	scan_kbd
+	ret
+click_w
+	ld	hl,(click)
+	inc	hl
+	ld	(click),hl
+	ret
+click	dw	0
+;---------------------------------
