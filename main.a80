@@ -133,7 +133,21 @@ drop_sc11
 	ld	hl,#0e80
 	ld	(hero_xx),hl
 game_s1	
-
+	call	hero_scr
+	halt
+	call	update_screen
+	call	menu_control
+	ld	a,0
+game_flag equ	$-1
+	cp	2	
+	jp	c,game_s1
+game_s2
+	call	test_joypad
+	call	hero_scr
+	halt
+	call	update_screen
+	jr	game_s2
+hero_scr
 	ld	hl,font_char+#208
 	ld	de,#14a0
 	ld	bc,#1887
@@ -172,14 +186,9 @@ game_s1
 	ld	bc,#1883
 	ld	a,#02
 	call	tilesprite
-	halt
-	call	update_screen
-	call	menu_control
-	ld	a,0
-game_flag equ	$-1
-	cp	2	
-	jp	c,game_s1
-	jr	$
+	ret
+
+
 bit_screen
 	db	#ff,#fc,#3f,#ff
 	db	#ff,#00,#00,#ff
@@ -230,7 +239,6 @@ hero_spr	dw	sprite_set
 
 hero_proc
 	call	hero_touch
-;	call	test_joypad
 
 
 	call	proc_hero
