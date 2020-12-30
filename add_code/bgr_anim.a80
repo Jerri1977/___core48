@@ -13,26 +13,26 @@ background_scan
 back_s0
 	push	bc
 	push	hl	
-	inc	l
+	inc	hl
 back_s01	
 	ld	a,(de)
 	exx
 	ld	hl,tile_list
 	ld	c,(hl)
 	inc	hl
-
 	push	bc
 	cpir	
 	pop	bc
 	jr	nz,back_s02
+
 	dec	bc
 	add	hl,bc	
 	ld	a,(hl)	;counter
 	exx
 	ld	(hl),e
-	inc	l
+	inc	hl
 	ld	(hl),a
-	inc 	l
+	inc 	hl
 	inc	c
 	exx
 back_s02
@@ -59,7 +59,7 @@ back_f0
 	jr	back_f1
 back_f11
 	ld	e,(hl)
-	inc	l
+	inc	hl
 	dec	(hl)
 	jr	nz,back_f1
 	ld	a,(de)
@@ -83,7 +83,7 @@ back_f11
 	ld	(de),a
 	dec	d
 back_f1
-	inc	l
+	inc	hl
 	djnz	back_f11
 	inc	d
 	inc	d	
