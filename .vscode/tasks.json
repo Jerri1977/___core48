@@ -10,6 +10,7 @@
             },
             "args": [
                 "--nologo",
+                "-Ddebug",
                 "main.a80"
             ],
             "group": {
