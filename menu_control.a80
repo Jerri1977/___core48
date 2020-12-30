@@ -23,8 +23,8 @@ set_menu
 	ld	(menu_phase),a
 	ret
 ;--------------------------------------------
-;первый вывод плашки с текстом
-;голубой на чорном
+;РїРµСЂРІС‹Р№ РІС‹РІРѕРґ РїР»Р°С€РєРё СЃ С‚РµРєСЃС‚РѕРј
+;РіРѕР»СѓР±РѕР№ РЅР° С‡РѕСЂРЅРѕРј
 init_menu
 	xor	a
 	ld	(game_flag),a	
@@ -101,7 +101,7 @@ menu_rot1p
 menu_rot2p
 	call	press_fire_p
 	call	menu_pause
-;тестируем огонь
+;С‚РµСЃС‚РёСЂСѓРµРј РѕРіРѕРЅСЊ
 	call	test_joypad
 	and	#10
 	jr	nz,fire_pressed

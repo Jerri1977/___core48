@@ -68,10 +68,14 @@ print_bright2 equ	218
 	ld	a,(hl)
 	ld	(de),a
 	call	pix_atr
-	ld	a,(attr_u)
+	ld	a,0
+attr_u	equ	$-1
 	ld	(de),a
 
-	ld	hl,(koorx)
+	ld	hl,#0000
+koorx	equ	$-2
+koory	equ	$-1
+
 	inc	l
 	ld	a,l
 	cp	#20
@@ -127,10 +131,10 @@ pix_atr
 
 
 
-koorx	db	0
-koory	db	0
-attr_u	db	0
-attr_d	db	0
+;koorx	db	0
+;koory	db	0
+;attr_u	db	0
+;attr_d	db	0
 	
 
 test_codes
@@ -218,8 +222,6 @@ print_16
 	sub	#60
 	jp	nc,test_codes
 	call	count_font
-
-
 	ld	a,(attr_u)
 	ld	c,a	
 	call	print_16_n
@@ -230,8 +232,8 @@ print_16
 	jr	c,$+4
 	ld	d,0
 	call	pix_de
-	ld	a,(attr_d)
-	ld	c,a	
+	ld	c,0
+attr_d	equ	$-1
 	call	print_16_n
 
 	ld	hl,(koorx)
