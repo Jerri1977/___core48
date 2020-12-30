@@ -134,6 +134,9 @@ drop_sc11
 	ld	hl,#0e80
 	ld	(hero_xx),hl
 game_s1	
+	xor	a
+	ld	(key_presed),a
+	ld	(key_holded),a
 	call	hero_scr
 	halt
 	call	update_screen
