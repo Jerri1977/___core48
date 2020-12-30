@@ -24,11 +24,16 @@
 	db	#00,#00,#00,#00,#00,#00,#ff,#ff
 	db	#00,#00,#00,#00,#00,#00,#00,#ff
 
+	org	font_t+(max_bg*8)
+	db	#55,#aa,#55,#aa,#55,#aa,#55,#aa
+
+
 
 	org	font_a
 	db	#07,07,#0f,#46
 	db	#46,#46,#46,#46,#46,#46,#46
-
+	org	font_a+max_bg
+	db	#45
 
 	org	free_a
 ;------------------------------
@@ -127,6 +132,17 @@ drop_sc11
 	inc	e
 	djnz	drop_sc11
 
+	ld	de,#150f
+
+	ld	c,#80
+	call	place_tile
+	dec	d
+	call	place_tile
+	dec	d
+	call	place_tile
+	dec	d
+	call	place_tile
+
 	xor	a
 	ld	(hero_act),a
 	ld	hl,#1500
@@ -155,6 +171,12 @@ hero_scr
 	ld	hl,font_char+#208
 	ld	de,#14a0
 	ld	bc,#1887
+	ld	a,r
+	and	#03
+	xor	c
+	ld	c,a
+
+
 	ld	a,#02
 	call	tilesprite
 
@@ -177,6 +199,11 @@ hero_scr
 	ld	hl,(hero_spr)
 	call	sprite_draw3
 
+
+	ld	a,(click)
+	and	#40
+	ret	z
+
 	ld	hl,font_char+#108
 ;hl адрес спрайта
 ;de HX,Y*8	
@@ -187,7 +214,11 @@ hero_scr
 ;	b 6___210 colormask
 
 	ld	de,#04a0
-	ld	bc,#1883
+	ld	bc,#1880
+	ld	a,r
+	and	#07
+	or	c
+	ld	c,a
 	ld	a,#02
 	call	tilesprite
 	ret
@@ -220,7 +251,7 @@ bit_screen
 	db	#ff,#ff,#ff,#ff
 ground
 	db	#04,#05,#06,#06,#05,#06,#07,#07,#07,#08,#07,#06,#06,#05,#05
-	db	#06,#07,#08,#09,#0a,#0a,#09,#09,#08,#07,#06,#06,#05,#05,#04
+	db	#05,#06,#07,#08,#09,#0a,#09,#09,#08,#07,#06,#06,#05,#05,#04
 
 hero_spn	db	0	
 hero_act	db	0
@@ -533,6 +564,9 @@ hero_count
 	display	$
 font_f	db	#00,#40,#40,#80
 	db	#81,#82,#83,#84,#85,#86,#87
+	ds	font_f+256-$,0
+
+
 
 ;---------------------------
 
