@@ -47,7 +47,7 @@ back_s02
 	pop	bc
 	djnz	back_s0
 	ret	
-
+	ifndef	background_frame
 background_frame
 	ld	b,0
 	exx
@@ -90,6 +90,53 @@ back_f1
 	dec	c
 	jr	nz,back_f0
 	ret
+	endif
+	ifndef	background_frame_int
+background_frame_int
+	ld	b,0
+	exx
+	ld	c,3
+	ld	d,bgr_tile/256
+	ld	hl,bgr_buf
+back_fi0	
+	ld	b,(hl)	;1=0 2+=1+
+	jr	back_fi1
+back_fi11
+	ld	e,(hl)
+	inc	hl
+	dec	(hl)
+	jr	nz,back_f1
+	ld	a,(de)
+	exx
+	ld	hl,tile_list
+	ld	c,(hl)
+	inc	hl
+	push	bc
+	cpir	
+	pop	bc
+	ld	a,(hl)	;nexttile
+	add	hl,bc	
+	ex	af,af'
+	ld	a,(hl)	;counter
+	exx
+	ld	(hl),a
+	ex	af,af'		
+	ld	(de),a
+	inc	d
+	ld	a,1
+	ld	(de),a
+	dec	d
+back_fi1
+	inc	hl
+	djnz	back_fi11
+	inc	d
+	inc	d	
+	dec	c
+	jr	nz,back_fi0
+	ret
+	endif
+
+
 
 
 
