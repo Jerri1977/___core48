@@ -93,6 +93,7 @@ back_f1
 	endif
 	ifndef	background_frame_int
 background_frame_int
+	ret
 	ld	b,0
 	exx
 	ld	c,3
@@ -119,6 +120,7 @@ back_fi11
 	ex	af,af'
 	ld	a,(hl)	;counter
 	exx
+
 	ld	(hl),a
 	ex	af,af'		
 	ld	(de),a
@@ -136,6 +138,15 @@ back_fi1
 	inc	d	
 	dec	c
 	jr	nz,back_fi0
+	ret
+background_frame_enable
+	xor	a
+	jr	background_frame_enable0
+
+background_frame_disable
+	ld	a,#c9
+background_frame_enable0
+	ld	(background_frame_int),a
 	ret
 	endif
 
