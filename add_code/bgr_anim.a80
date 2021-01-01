@@ -123,7 +123,10 @@ back_fi11
 	ex	af,af'		
 	ld	(de),a
 	inc	d
+	ld	a,(de)
+	or	a	
 	ld	a,1
+	jr	nz,$+3
 	ld	(de),a
 	dec	d
 back_fi1
