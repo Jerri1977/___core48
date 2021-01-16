@@ -31,9 +31,11 @@ game_stek	equ	flip_spr
 
 	display	"----------------------------------"
 	display	"engine tables: ",roll_table,",",start_engine-roll_table
-	display	"engine code: ",start_engine,",",flip_spr-start_engine
-	display	"engine data: ",flip_spr,",",0-flip_spr
+	display	"engine code:   ",start_engine,",",flip_spr-start_engine
+	display	"engine data:   ",flip_spr,",",0-flip_spr
+	display	"block to save: ",start_engine,",",flip_spr-start_engine
 	display	" "
 	display	"used for data: ",font_char,",",free_a-font_char
-	display	"free for game: ",roll_table-free_a
+	display	"free for game: ",free_a,",",roll_table-free_a
+	display	"block to save: ",font_char," to gameend"
 	display	"----------------------------------"
