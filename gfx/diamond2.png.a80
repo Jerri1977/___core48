@@ -1,7 +1,8 @@
-;spriteset: diamond2.png sprites
-;auto created 2020/11/28 20:54:40
+;spriteset: diamond2
+;auto created 2021/01/22 22:02:57
 diamond2_000
-;	db	16,2
+	db	16	;high
+	db	2	;len
 	db	#00,#00,#00,#00
 	db	#01,#01,#80,#80
 	db	#07,#06,#E0,#E0
@@ -19,7 +20,8 @@ diamond2_000
 	db	#00,#00,#00,#00
 	db	#00,#00,#00,#00
 diamond2_001
-;	db	16,2
+	db	16	;high
+	db	2	;len
 	db	#00,#00,#00,#00
 	db	#01,#01,#80,#80
 	db	#07,#06,#E0,#E0
