@@ -148,7 +148,6 @@ Repeat
   currY=tempY
   maxY=0
   maxX=width
-  
 ;считаем высоту текущего спрайта
   Repeat
     color=Point(0,tempY)
@@ -167,7 +166,43 @@ Repeat
     
   Until color=4 Or count=0
  ;------------------------------
-  
+ ;проверяем ширину спрайта
+ If   cutright
+;   PrintN("cutright=1")
+  For  x=maxx-1 To 0 Step -1
+   maxx=x
+    For  y=0 To maxY-1
+       color=Point(x,currY+y)
+       
+       If Red(color)>127 And Green(color)<127 And Blue(color)<127 ;color red = mask
+       Else
+         Break 2
+       EndIf
+     Next y
+   Next x
+  maxx=1+(maxx|7)
+ EndIf
+ 
+ 
+ 
+ ;------------------------------
+ ;проверяем высоту спрайта
+ minY=0
+ If   cutup
+;   PrintN("cutup=1")
+    For  y=0 To maxY-1
+     minY=y
+      For  x=0 To maxx-1 
+       color=Point(x,currY+y)
+       
+       If Red(color)>127 And Green(color)<127 And Blue(color)<127 ;color red = mask
+       Else
+         Break 2
+       EndIf
+     Next x
+    Next y
+ EndIf
+ ;------------------------------
   PrintN(Str(maxY)+"x"+Str(maxX)) 
  
   label$=name$+"_"+RSet(Str(z),3,"0")
@@ -175,7 +210,7 @@ Repeat
   
   WriteStringN(1,label$)
   If  addhigh=1
-  line$=Chr(9)+"db"+Chr(9)+Str(maxY)+Chr(9)+";high"
+  line$=Chr(9)+"db"+Chr(9)+Str(maxY-minY)+Chr(9)+";high"
   WriteStringN(1,line$)
   EndIf
   
@@ -186,7 +221,7 @@ Repeat
   
 
   
-     For  y=0 To maxY-1
+     For  y=minY To maxY-1
      line$=Chr(9)+"db"+Chr(9)
      For  x=0 To (maxx/8)-1
      sprt=0
@@ -222,6 +257,12 @@ Repeat
            End
        EndSelect
      Next xx
+     
+     If  andor
+       sprt=sprt!mask
+       mask=mask!255
+     EndIf
+     
      line$+"#"+RSet(Hex(mask),2,"0")+",#"+RSet(Hex(sprt),2,"0")+","      
    Next x
    line$=RTrim(line$,",")
@@ -238,8 +279,8 @@ Until  count=0
 ;Input()
 CloseConsole()
 ; IDE Options = PureBasic 4.61 (Windows - x86)
-; CursorPosition = 207
-; FirstLine = 183
+; CursorPosition = 263
+; FirstLine = 239
 ; EnableXP
 ; Executable = ..\..\_KnG\c64_data\c64ripper.exe
 ; CurrentDirectory = D:\_work\PureBasic461\

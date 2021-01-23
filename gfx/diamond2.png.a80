@@ -1,9 +1,8 @@
 ;spriteset: diamond2
-;auto created 2021/01/22 22:02:57
+;auto created 2021/01/23 12:16:39
 diamond2_000
-	db	16	;high
+	db	15	;high
 	db	2	;len
-	db	#00,#00,#00,#00
 	db	#01,#01,#80,#80
 	db	#07,#06,#E0,#E0
 	db	#0F,#0D,#F0,#50
@@ -20,9 +19,8 @@ diamond2_000
 	db	#00,#00,#00,#00
 	db	#00,#00,#00,#00
 diamond2_001
-	db	16	;high
+	db	15	;high
 	db	2	;len
-	db	#00,#00,#00,#00
 	db	#01,#01,#80,#80
 	db	#07,#06,#E0,#E0
 	db	#0F,#0D,#F0,#50
