@@ -391,7 +391,7 @@ reset_windows
 mark_window ret
 ;отключаем освежение фона и отрисовку спрайтов под окном диалогов
 ;вызывать перед update_screen 
-	ld	a,0
+	ld	a,#ff
 fill_bgr_buf
 	push	af
 	ld	de,#1111
