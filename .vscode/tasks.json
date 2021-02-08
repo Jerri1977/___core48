@@ -31,7 +31,7 @@
         {
             "label": "unReal",
             "type": "shell",
-            "command": "qsave.sna",
+            "command": "..\\..\\unreal\\unreal.exe qsave.sna",
             "options": {
                 "cwd": "${workspaceFolder}"
             },

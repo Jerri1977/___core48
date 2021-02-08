@@ -311,6 +311,9 @@ drop_screen0
 	inc	h
 	ret
 drop_tile
+	inc	a
+	ret	z
+	dec	a
 	push	hl,bc
 	ld	e,l
 	ld	d,b
