@@ -6,8 +6,8 @@
 
 ;masked
 ;формат спрайта = байт маски + байт спрайта
-
-
+;высота не более 72 при использовании разворота спрайта
+;
 
 sprite_draw1
 ;клиппирование не требуется
@@ -178,7 +178,7 @@ flip_sprite1
 	ld	sp,hl
 	ld	h,flip_tbl/256
 count=flip_spr
-	dup	64
+	dup	72
 	ld	l,c
 	ld	e,(hl)
 	ld	l,b
