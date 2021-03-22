@@ -14,7 +14,7 @@ free_a	equ	#6800	;данные и код игры
 
 		
 
-start_engine equ	#e600	;код и данные движка
+start_engine equ	#e500	;код и данные движка
 im_vector	equ	(start_engine/256)
 start_inter equ	(im_vector+1)*257
 
