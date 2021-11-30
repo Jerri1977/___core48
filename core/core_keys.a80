@@ -13,7 +13,7 @@
 
 ;scan_tbl -используется при задании таблицы сканкодов для k_table
 ;HL,BC,AF
-;BC       -результат B-ряд 0-7 С-маска #10-#01
+;BC       -результат B-адрес ряда 0-7 С-маска #10-#01
 
 ;key_char     -сканирование нажатой клавиши 
 ;HL,DE,BC,AF
@@ -53,29 +53,22 @@ scan_kbd
 	ret
 ;------------------------------------
 scan_ctrl
-	ld 	bc,k_table
-	ld 	de,kb_buf
-	exx
-	ld	e,#80
+	ld 	hl,k_table
+	ld 	d,high kb_buf
+	ld	bc,#0180
 scan_ctrl0
-	exx
-	ld	a,(bc)
-	inc	bc
-	ld	l,a
-	ld	h,0
-	add	hl,de
-	ld	a,(bc)
-	inc	bc
+	ld	e,(hl)
+	inc	hl
+	ld	a,(de)
 	and	(hl)
-	cp	1
-	exx
-	rr	e
+	cp	b
+	rr	c
 	jr	nc,scan_ctrl0
-	ld	a,e
+	ld	a,c
 kemp_act	ret
 	in	a,(#1f)
 	and	#1f
-	or	e
+	or	c
 	ret
 ;------------------------------------
 test_joypad
@@ -106,9 +99,7 @@ scan_tbl1
 	ld	c,b
 	ret
 scan_tbl2
-	ld	a,8
-	sub	b
-	ld	b,c
+	ld	b,l
 	ld	c,a
 ;pos,mask	;c b	
 	ret
@@ -168,16 +159,16 @@ k_table
 ; 0 1 2 3 4 
 ; r l d u f 
 
-	db	5, 1	;right p   5, 1	
-	db	5, 2	;left  o   5, 2
-	db	1, 1	;down  a   1, 1
-	db	2, 1	;up    q   3, 1
+	db	low kb_buf+5, 1	;right p   5, 1	
+	db	low kb_buf+5, 2	;left  o   5, 2
+	db	low kb_buf+1, 1	;down  a   1, 1
+	db	low kb_buf+2, 1	;up    q   3, 1
 
-	db	7, 1	;fire  spc 7, 1
-	db	6, 1	;key6  en  6, 1
+	db	low kb_buf+7, 1	;fire  spc 7, 1
+	db	low kb_buf+6, 1	;key6  en  6, 1
 
-	db	2, 8	;key7  R   2, 8
-	db	5, 16	;key8  Y   5, 16
+	db	low kb_buf+2, 8	;key7  R   2, 8
+	db	low kb_buf+5,16	;key8  Y   5, 16
 
 key_presed db 	0
 key_holded db	0
@@ -185,7 +176,9 @@ key_holded db	0
 kemp_var	db	0	
 cur_keys	db	0
 kb_buf	ds	8	
-	
+	if	high kb_buf<(high($-1))	
+	display	"Warning kb_buf table bordered please move"
+	endif
 ;	  1 2 4 8 16	
 ;#fe 0	 cs z x c v
 ;#fd 1 	  a s d f g
