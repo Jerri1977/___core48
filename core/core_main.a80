@@ -113,11 +113,11 @@ init_flip1
 ;------------------------------
 ;core engine placing here
 ;
-	include	"core\core_keys.a80"
-	include	"core\core_tiles.a80"
-	include	"core\core_sprite3.a80"
-	include	"core\core_sprite2.a80"
-	include	"core\core_sprite1.a80"
-	include	"core\core_tilesprite.a80"
-	include	"core\core_print.a80"
+	include	"core/core_keys.a80"
+	include	"core/core_tiles.a80"
+	include	"core/core_sprite3.a80"
+	include	"core/core_sprite2.a80"
+	include	"core/core_sprite1.a80"
+	include	"core/core_tilesprite.a80"
+	include	"core/core_print.a80"
 	display	"engine free for game stek: ",$,",",flip_spr-$

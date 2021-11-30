@@ -61,6 +61,7 @@ scan_ctrl0
 	inc	hl
 	ld	a,(de)
 	and	(hl)
+	inc	hl
 	cp	b
 	rr	c
 	jr	nc,scan_ctrl0
@@ -99,8 +100,8 @@ scan_tbl1
 	ld	c,b
 	ret
 scan_tbl2
-	ld	b,l
-	ld	c,a
+	ld	b,a
+	ld	c,b
 ;pos,mask	;c b	
 	ret
 ;------------------------------------

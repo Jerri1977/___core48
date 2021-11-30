@@ -4,7 +4,7 @@
         {
             "label": "SjASMPlus",
             "type": "shell",
-            "command": "..\\..\\SJASM\\SJASMPLUS",
+            "command": "..\\..\\SJASMplus\\SJASMPLUS",
             "options": {
                 "cwd": "${workspaceFolder}"
             },
