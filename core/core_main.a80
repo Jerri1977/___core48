@@ -58,6 +58,7 @@ hlhl_jump
 	inc	hl	
 	ld	h,(hl)
 	ld	l,a
+jphl
 	jp	(hl)
 im_ret
 	pop	af,bc,de,hl
