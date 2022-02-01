@@ -49,6 +49,39 @@ sprite_set
 ;game start here
 ;
 game_start
+	ld	DE,#0a0a
+
+	xor	a                           
+
+	dup	8                           
+	rl	d
+	rla
+	sub	e
+	jr	nc,$+3
+	add	a,e
+	edup                             
+
+	ld	e,a
+	ld	a,d
+	rla
+	cpl
+	ld	d,a
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ;включаем обработчик 1 (menu)
 	ld	a,1
 	ld	(int_mode),a

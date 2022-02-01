@@ -100,8 +100,8 @@ scan_tbl1
 	ld	c,b
 	ret
 scan_tbl2
-	ld	b,a
-	ld	c,b
+	ld	b,c
+	ld	c,l
 ;pos,mask	;c b	
 	ret
 ;------------------------------------
