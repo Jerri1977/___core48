@@ -67,6 +67,7 @@ scan_ctrl0
 	jr	nc,scan_ctrl0
 	ld	a,c
 kemp_act	ret
+	xor	a
 	in	a,(#1f)
 	and	#1f
 	or	c
