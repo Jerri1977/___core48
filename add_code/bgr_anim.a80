@@ -1,15 +1,19 @@
 ;--------------------------------
 ;формат таблицы tile_speed	
 ;количество анимированных тайлов - 0-127
-;выровнена по NN00	общая длина 512 байт
-;	байт скорости следующего тайла,номер следующего тайла
+;	общая длина максимальное количество модификантов на экран+3
+;	счетчик фрейма на момент инициализации, максимальный дифф, номер тайла в странице
+
 
 background_scan
+	ld	a,(click)
+	ld	(back_s1),a
 	ld	b,0
 	exx
+
 	ld	hl,bgr_buf
 	ld	de,bgr_tile	
-	ld	bc,#0301
+	ld	b,#03
 back_s0
 	push	bc
 	push	hl	
@@ -29,9 +33,12 @@ back_s01
 	add	hl,bc	
 	ld	a,(hl)	;counter
 	exx
-	ld	(hl),e
+	ld	(hl),0
+back_s1	equ	$-1
 	inc	hl
 	ld	(hl),a
+	inc	hl
+	ld	(hl),e
 	inc 	hl
 	inc	c
 	exx
@@ -47,7 +54,72 @@ back_s02
 	pop	bc
 	djnz	back_s0
 	ret
-	
+background_frame
+	ld	a,(click)
+	ld	(back_s2),a
+
+	ld	b,0
+	exx
+	ld	c,3
+	ld	d,bgr_tile/256
+	ld	hl,bgr_buf
+back_f0	
+	ld	b,(hl)	;1=0 2+=1+
+	jr	back_f1
+back_f11
+	ld	a,0
+back_s2	equ	$-1
+	sub	(hl)
+	inc	hl
+	cp	(hl)
+	jr	c,back_f12	
+;берем адрес текущего тайла
+	inc	hl
+	ld	e,(hl)
+	dec	hl
+
+;корректируем текущий счетчик до идеального состояния	
+	ld	a,(hl)
+	dec	hl
+	add	a,(hl)
+	inc	hl
+	ld	(hl),a
+	inc	hl
+	ld	a,(de)
+
+	exx
+;ищем в таблице следующий фрейм
+	ld	hl,tile_list
+	ld	c,(hl)
+	inc	hl
+	push	bc
+	cpir	
+	pop	bc
+	ld	a,(hl)	;nexttile
+	add	hl,bc	
+	ex	af,af'
+	ld	a,(hl)	;counter
+	exx
+
+	ld	(hl),a
+	ex	af,af'		
+	ld	(de),a
+	inc	d
+	ld	a,1
+	ld	(de),a
+	dec	d
+back_f12
+	inc	hl
+back_f1
+	inc	hl
+	djnz	back_f11	
+	inc	d
+	inc	d	
+	dec	c
+	jr	nz,back_f0
+	ret
+
+/*	
 	ifndef	background_frame
 background_frame
 	ld	b,0
@@ -150,7 +222,7 @@ background_frame_enable0
 	ld	(background_frame_int),a
 	ret
 	endif
-
+*/
 
 
 
