@@ -13,7 +13,7 @@ background_scan
 
 	ld	hl,bgr_buf
 	ld	de,bgr_tile	
-	ld	b,#03
+	ld	bc,#0301
 back_s0
 	push	bc
 	push	hl	
