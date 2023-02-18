@@ -43,24 +43,10 @@ im_stek
 	exx
 	ex	af,af'
 	push	hl,de,bc,af
-	ld	hl,im_ret	
-	push	hl	
-	ld	a,0
-int_mode	equ	$-1
-	ld	hl,interrupt_list
-	jp	hlhl_jump
-stek_jump
-	pop	hl
-hlhl_jump
-	add	a,a
-	call	hla
-	ld	a,(hl)
-	inc	hl	
-	ld	h,(hl)
-	ld	l,a
-jphl
-	jp	(hl)
-im_ret
+
+	call	im_empty
+int_proc	equ	$-2	
+
 	pop	af,bc,de,hl
 	exx
 	ex	af,af'
@@ -72,12 +58,33 @@ im_sp0	equ	$-2
 	jp	#c3c3
 im_ret0	equ	$-2		
 ;------------------------------
+set_int
+	ld	hl,interrupt_list
+	add	a,a
+	call	hla
+	call	take_hlhl
+	ld	(int_proc),hl
+	ret
+stek_jump
+	pop	hl
+hlhl_jump
+	add	a,a
+	call	hla
+	call	take_hlhl
+jphl
+	jp	(hl)
 hla
 	add	a,l
 	ld	l,a
 	ret	nc
 	inc	h
 int_empty
+	ret
+take_hlhl	
+	ld	a,(hl)
+	inc	hl	
+	ld	h,(hl)
+	ld	l,a
 	ret
 ;---------------------------------
 init_roll

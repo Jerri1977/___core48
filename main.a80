@@ -1,12 +1,10 @@
-
-
-
-
-
+;подключаем разметку памяти спектрум 48 кб
 	device 	ZXSPECTRUM48
 	encoding	"win"
+;здесь активируем движок Core	
 	include	"core/core_define.a80"
 	include	"core/core_main.a80"
+;	
 	org	font_char
 	incbin	"font.fnt"
 	org	font_t
@@ -84,8 +82,7 @@ game_start
 
 ;включаем обработчик 1 (menu)
 	ld	a,1
-	ld	(int_mode),a
-
+	call	set_int
 
 	call	sprite_reset
 	call	init_roll
@@ -603,7 +600,7 @@ font_f	db	#00,#40,#40,#80
 
 ;---------------------------
 
-	include	"menu_control.a80"
+	include	"add_code/menu_control.a80"
 
 ;--------------------------------------------------------------------------------
 ;секция анимации фона
