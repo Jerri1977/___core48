@@ -44,7 +44,7 @@ im_stek
 	ex	af,af'
 	push	hl,de,bc,af
 
-	call	im_empty
+	call	int_empty
 int_proc	equ	$-2	
 
 	pop	af,bc,de,hl
