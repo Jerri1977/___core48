@@ -3,9 +3,15 @@
 ;количество анимированных тайлов - 0-127
 ;	общая длина максимальное количество модификантов на экран+3
 ;	счетчик фрейма на момент инициализации, максимальный дифф, номер тайла в странице
+;hl - tile_list	- первый вызов переинициализация таблицы
+
 
 
 background_scan
+	ld	(back_ptr0),hl
+	ld	(back_ptr1),hl
+
+
 	ld	a,(click)
 	ld	(back_s1),a
 	ld	b,0
@@ -21,7 +27,10 @@ back_s0
 back_s01	
 	ld	a,(de)
 	exx
-	ld	hl,tile_list
+
+	ld	hl,$
+back_ptr0	equ	$-2
+
 	ld	c,(hl)
 	inc	hl
 	push	bc
@@ -89,7 +98,8 @@ back_s2	equ	$-1
 
 	exx
 ;ищем в таблице следующий фрейм
-	ld	hl,tile_list
+	ld	hl,$
+back_ptr1	equ	$-2	
 	ld	c,(hl)
 	inc	hl
 	push	bc
